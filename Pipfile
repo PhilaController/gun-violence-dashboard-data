@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[requires]
+python_version = "3.8"
+
+[packages]
+pandas = "*"
+numpy = "*"
+geopandas = "*"
+carto2gpd = "*"
+loguru = "*"
+click = "*"
+gun-violence-dashboard-data = {editable = true, path = "."}
+
+[dev-packages]
+black = "==19.3b0"
+flake8 = "*"
+isort = "*"
+mypy = "*"
+pre-commit = "*"
+pytest = "*"
+pytest-cov = "*"
