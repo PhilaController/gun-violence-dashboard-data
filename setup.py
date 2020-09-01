@@ -23,7 +23,7 @@ setup(
     maintainer="Nick Hand",
     maintainer_email="nick.hand@phila.gov",
     packages=find_packages(),
-    description="Providing daily updates to the City Controller's Gun Violence Dashboard",
+    description="Python toolkit for preprocessing data for the City Controller's Gun Violence Dashboard",
     license="MIT",
     python_requires=">=3.7",
     install_requires=["numpy", "pandas", "geopandas", "click", "carto2gpd"],

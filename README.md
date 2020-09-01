@@ -1,3 +1,3 @@
-# phl-courts-scraper
+# gun-violence-dashboard-data
 
-A Python utility to scrape docket sheets and court summaries for Philadelphia courts
+Python toolkit for preprocessing data for the City Controller's Gun Violence Dashboard
