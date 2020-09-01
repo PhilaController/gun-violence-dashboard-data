@@ -26,7 +26,7 @@ setup(
     description="Python toolkit for preprocessing data for the City Controller's Gun Violence Dashboard",
     license="MIT",
     python_requires=">=3.7",
-    install_requires=["numpy", "pandas", "geopandas", "click", "carto2gpd"],
+    install_requires=["numpy", "pandas", "geopandas", "click", "carto2gpd", "loguru"],
     entry_points={
         "console_scripts": ["gv_dashboard_data=gun_violence_dashboard_data.core:cli"]
     },
