@@ -15,9 +15,6 @@ jobs:
         with:
           auto-update-conda: true
           python-version: 3.7
-      - name: Install pipenv
-        shell: bash -l {0}
-        run: conda install -c conda-forge pipenv
       - name: Conda info
         shell: bash -l {0}
         run: conda info
@@ -27,8 +24,8 @@ jobs:
       - name: Download files
         shell: bash -l {0}
         run: |
-          pipenv --python=$(conda run which python) --site-packages install .
-          pipenv --python=$(conda run which python) --site-packages gv_dashboard_data daily-update
+          pip install -e .
+          gv_dashboard_data daily-update
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
