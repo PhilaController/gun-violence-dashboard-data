@@ -14,10 +14,19 @@ jobs:
       - uses: goanpeca/setup-miniconda@v1
         with:
           auto-update-conda: true
-          python-version: 3.8
+          python-version: 3.7
+      - name: Install pipenv
+        shell: bash -l {0}
+        run: conda install -c conda-forge pipenv
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+      - name: Conda list
+        shell: bash -l {0}
+        run: conda list
       - name: Download files
+        shell: bash -l {0}
         run: |
-          conda install -c conda-forge pipenv
           pipenv install .
           pipenv run gv_dashboard_data daily-update
       - name: Commit files
