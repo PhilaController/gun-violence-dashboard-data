@@ -17,7 +17,7 @@ jobs:
           python-version: 3.8
       - name: Download files
         run: |
-          conda install pipenv
+          conda install -c conda-forge pipenv
           pipenv install .
           pipenv run gv_dashboard_data daily-update
       - name: Commit files
