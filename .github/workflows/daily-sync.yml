@@ -27,7 +27,7 @@ jobs:
       - name: Download files
         shell: bash -l {0}
         run: |
-          pipenv --python=$(conda run which python) --site-packages .
+          pipenv --python=$(conda run which python) --site-packages install .
           pipenv --python=$(conda run which python) --site-packages gv_dashboard_data daily-update
       - name: Commit files
         run: |
