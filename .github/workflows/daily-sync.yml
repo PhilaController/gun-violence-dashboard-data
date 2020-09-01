@@ -27,8 +27,8 @@ jobs:
       - name: Download files
         shell: bash -l {0}
         run: |
-          pipenv install .
-          pipenv run gv_dashboard_data daily-update
+          pipenv pipenv --python=$(conda run which python) --site-packages .
+          pipenv pipenv --python=$(conda run which python) --site-packages gv_dashboard_data daily-update
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
