@@ -1,0 +1,31 @@
+name: Daily Data Sync
+
+on: push
+
+jobs:
+  env-install:
+    name: Daily Data Sync
+    runs-on: "macos-latest"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false 
+          fetch-depth: 0
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+      - name: Download files
+        run: |
+          pipenv install .
+          pipenv run gv_dashboard_data daily-update
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Add daily download changes" -a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+    
