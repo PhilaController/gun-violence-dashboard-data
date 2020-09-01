@@ -27,7 +27,8 @@ def run_daily_update():
         data_yr = data.query(f"year == {year}")
 
         # Save geojson
-        logger.info(f"Saving {year} shootings as a GeoJSON file")
+        filename = DATA_DIR / f"shootings_{year}.geojson"
+        logger.info(f"Saving {year} shootings to GeoJSON file: '{filename}'")
         data_yr[
             [
                 "geometry",
@@ -40,7 +41,7 @@ def run_daily_update():
                 "date",
                 "age_group",
             ]
-        ].to_file(DATA_DIR / f"shootings_{year}.json", driver="GeoJSON")
+        ].to_file(filename, driver="GeoJSON")
 
         # Daily counts
         daily = calculate_daily_counts(data_yr)
