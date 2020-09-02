@@ -1,6 +1,8 @@
 name: Daily Data Sync
 
-on: push
+on:
+  schedule:
+  - cron: "0 0 * * *"
 
 jobs:
   env-install:
