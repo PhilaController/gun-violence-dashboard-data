@@ -1,0 +1,41 @@
+name: Daily Data Sync
+
+on:
+  schedule:
+    - cron: '15 15 * * *'
+
+jobs:
+  env-install:
+    name: Daily Data Sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false 
+          fetch-depth: 0
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: 3.7
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+      - name: Conda list
+        shell: bash -l {0}
+        run: conda list
+      - name: Download files
+        shell: bash -l {0}
+        run: |
+          pip install -e .
+          gv_dashboard_data daily-update
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add gun_violence_dashboard_data/data/
+          git commit -m "Add daily download changes"
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+    
