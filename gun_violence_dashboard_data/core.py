@@ -1,9 +1,8 @@
 import datetime
 import json
 
-import click
-
 import carto2gpd
+import click
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -21,6 +20,7 @@ def run_daily_update():
     data = download_shootings_data()
 
     # Loop over each year of data
+    daily = []
     for year in sorted(data["year"].unique()):
 
         # Get data for this year
@@ -43,11 +43,18 @@ def run_daily_update():
         ].to_file(DATA_DIR / f"shootings_{year}.json", driver="GeoJSON")
 
         # Daily counts
-        daily = calculate_daily_counts(data_yr)
+        daily.append(calculate_daily_counts(data_yr, year))
 
-        # Save daily
-        logger.info(f"Saving {year} daily shooting counts as a JSON file")
-        daily.to_json(DATA_DIR / f"shootings_{year}_daily.json", orient="records")
+    # Finish daily
+    daily = pd.concat(daily, axis=1).cumsum()
+
+    # Save daily
+    logger.info(f"Saving {year} daily shooting counts as a JSON file")
+    out = {}
+    for col in daily:
+        out[col] = daily[col].tolist()
+    out["dayofyear"] = daily.index.tolist()
+    json.dump(out, open(DATA_DIR / f"shootings_cumulative_daily.json", "w"))
 
     # Update meta data
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -58,17 +65,15 @@ def run_daily_update():
     json.dump(meta, meta_path.open(mode="w"))
 
 
-def calculate_daily_counts(df):
+def calculate_daily_counts(df, year):
     """Calculate daily shooting counts."""
 
     # Group by day
     N = df.set_index("date").groupby(pd.Grouper(freq="D")).size()
 
-    # Convert index to a string
-    N.index = N.index.strftime("%Y-%m-%d")
+    N = N.reset_index(name=str(year)).assign(day=lambda df: df.date.dt.dayofyear)
 
-    # Return as dataframe
-    return N.reset_index(name="count")
+    return N.set_index("day")[str(year)]
 
 
 def download_shootings_data():
