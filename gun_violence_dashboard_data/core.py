@@ -1,16 +1,17 @@
 import datetime
-import json
 
 import carto2gpd
 import click
 import numpy as np
 import pandas as pd
+import simplejson as json
 from loguru import logger
 
 from . import DATA_DIR
 
 ENDPOINT = "https://phl.carto.com/api/v2/sql"
 TABLE_NAME = "shootings"
+CURRENT_YEAR = datetime.datetime.now().year
 
 
 def run_daily_update():
@@ -46,15 +47,20 @@ def run_daily_update():
         daily.append(calculate_daily_counts(data_yr, year))
 
     # Finish daily
-    daily = pd.concat(daily, axis=1).cumsum()
+    daily = pd.concat(daily, axis=1)
+    cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
+    daily = daily.cumsum()
+    daily.loc[cut:, str(CURRENT_YEAR)] = None
 
     # Save daily
     logger.info(f"Saving cumulative daily shooting counts as a JSON file")
     out = {}
     for col in daily:
-        out[col] = daily[col].replace(np.nan, None).tolist()
+        out[col] = daily[col].tolist()
     out["dayofyear"] = daily.index.tolist()
-    json.dump(out, open(DATA_DIR / f"shootings_cumulative_daily.json", "w"))
+    json.dump(
+        out, open(DATA_DIR / f"shootings_cumulative_daily.json", "w"), ignore_nan=True
+    )
 
     # Update meta data
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
