@@ -60,18 +60,24 @@ def run_daily_update():
         # Daily counts
         daily.append(calculate_daily_counts(data_yr, year))
 
-    # Finish daily
+    # Finish daily cumulative calculation
     daily = pd.concat(daily, axis=1).sort_index()
 
+    # Figure max day in current year
+    cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
+
+    # Fillna and do the cum sum
+    daily = daily.fillna(0).cumsum()
+
+    # Current year back to NaNs
+    daily.loc[cut:, str(CURRENT_YEAR)] = None
+
+    # Re-index to account for leap years
     new_index = []
     for v in daily.index:
         fields = v.split()
         new_index.append(f"{MONTHS[int(fields[0])-1]} {fields[1]}")
     daily.index = new_index
-
-    cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
-    daily = daily.fillna(0).cumsum()
-    daily.loc[cut:, str(CURRENT_YEAR)] = None
 
     # Save daily
     logger.info(f"Saving cumulative daily shooting counts as a JSON file")
