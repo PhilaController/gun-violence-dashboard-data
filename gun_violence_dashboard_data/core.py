@@ -78,7 +78,7 @@ def download_shootings_data():
     ------
     https://www.opendataphilly.org/dataset/shooting-victims
     """
-    return (
+    df = (
         carto2gpd.get(ENDPOINT, TABLE_NAME)
         .assign(
             time=lambda df: df.time.replace("<Null>", np.nan).fillna("00:00:00"),
@@ -99,10 +99,16 @@ def download_shootings_data():
                 default="Unknown",
             ),
         )
+        .assign(age=lambda df: df.age.fillna("Unknown"))
         .drop(labels=["point_x", "point_y", "date_", "time", "objectid"], axis=1)
         .sort_values("date", ascending=False)
         .reset_index(drop=True)
     )
+
+    # Track latino
+    df.loc[df["latino"] > 0, "race"] = "H"
+
+    return df
 
 
 @click.group()
