@@ -70,7 +70,7 @@ def run_daily_update():
     daily.index = new_index
 
     cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
-    daily = daily.cumsum()
+    daily = daily.fillna(0).cumsum()
     daily.loc[cut:, str(CURRENT_YEAR)] = None
 
     # Save daily
