@@ -79,7 +79,7 @@ def calculate_daily_counts(df, year):
 
     # Reindex
     N = N.reindex(pd.date_range(f"{year}-01-01", f"{year}-12-31")).rename(str(year))
-    N.index = N.index.strftime("%m-%d")
+    N.index = N.index.strftime("%b %d")
     return N
 
 
