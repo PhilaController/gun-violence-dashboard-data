@@ -12,6 +12,20 @@ from . import DATA_DIR
 ENDPOINT = "https://phl.carto.com/api/v2/sql"
 TABLE_NAME = "shootings"
 CURRENT_YEAR = datetime.datetime.now().year
+MONTHS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
 
 
 def run_daily_update():
@@ -48,6 +62,13 @@ def run_daily_update():
 
     # Finish daily
     daily = pd.concat(daily, axis=1).sort_index()
+
+    new_index = []
+    for v in daily.index:
+        fields = v.split()
+        new_index.append(f"{MONTHS[int(fields[0])-1]} {fields[1]}")
+    daily.index = new_index
+
     cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
     daily = daily.cumsum()
     daily.loc[cut:, str(CURRENT_YEAR)] = None
@@ -79,7 +100,7 @@ def calculate_daily_counts(df, year):
 
     # Reindex
     N = N.reindex(pd.date_range(f"{year}-01-01", f"{year}-12-31")).rename(str(year))
-    N.index = N.index.strftime("%b %d")
+    N.index = N.index.strftime("%m %d")
     return N
 
 
