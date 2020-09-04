@@ -52,7 +52,7 @@ def run_daily_update():
     logger.info(f"Saving cumulative daily shooting counts as a JSON file")
     out = {}
     for col in daily:
-        out[col] = daily[col].tolist()
+        out[col] = daily[col].replace(np.nan, None).tolist()
     out["dayofyear"] = daily.index.tolist()
     json.dump(out, open(DATA_DIR / f"shootings_cumulative_daily.json", "w"))
 
