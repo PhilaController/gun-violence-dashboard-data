@@ -49,7 +49,7 @@ def run_daily_update():
     daily = pd.concat(daily, axis=1).cumsum()
 
     # Save daily
-    logger.info(f"Saving {year} daily shooting counts as a JSON file")
+    logger.info(f"Saving cumulative daily shooting counts as a JSON file")
     out = {}
     for col in daily:
         out[col] = daily[col].tolist()
