@@ -47,7 +47,7 @@ def run_daily_update():
         daily.append(calculate_daily_counts(data_yr, year))
 
     # Finish daily
-    daily = pd.concat(daily, axis=1)
+    daily = pd.concat(daily, axis=1).sort_index()
     cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
     daily = daily.cumsum()
     daily.loc[cut:, str(CURRENT_YEAR)] = None
@@ -57,7 +57,7 @@ def run_daily_update():
     out = {}
     for col in daily:
         out[col] = daily[col].tolist()
-    out["dayofyear"] = daily.index.tolist()
+    out["date"] = daily.index.tolist()
     json.dump(
         out, open(DATA_DIR / f"shootings_cumulative_daily.json", "w"), ignore_nan=True
     )
@@ -77,9 +77,10 @@ def calculate_daily_counts(df, year):
     # Group by day
     N = df.set_index("date").groupby(pd.Grouper(freq="D")).size()
 
-    N = N.reset_index(name=str(year)).assign(day=lambda df: df.date.dt.dayofyear)
-
-    return N.set_index("day")[str(year)]
+    # Reindex
+    N = N.reindex(pd.date_range(f"{year}-01-01", f"{year}-12-31")).rename(str(year))
+    N.index = N.index.strftime("%m-%d")
+    return N
 
 
 def download_shootings_data():
