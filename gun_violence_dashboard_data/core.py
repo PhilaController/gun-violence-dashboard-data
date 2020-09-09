@@ -1,13 +1,17 @@
 import datetime
 
-import carto2gpd
 import click
+
+import carto2gpd
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 import simplejson as json
 from loguru import logger
 
 from . import DATA_DIR
+from .streets import EPSG, load_streets_directory, match_to_streets
+from .tools import replace_missing_geometries
 
 ENDPOINT = "https://phl.carto.com/api/v2/sql"
 TABLE_NAME = "shootings"
@@ -33,6 +37,10 @@ def run_daily_update():
     # Download full dataset
     logger.info("Downloading shootings database")
     data = download_shootings_data()
+    data.to_file(DATA_DIR / "raw" / "shootings.json", driver="GeoJSON")
+
+    logger.info("Calculating street hot spots")
+    data = calculate_street_hotspots(data)
 
     # Loop over each year of data
     daily = []
@@ -54,8 +62,9 @@ def run_daily_update():
                 "fatal",
                 "date",
                 "age_group",
+                "segment_id",
             ]
-        ].to_file(DATA_DIR / f"shootings_{year}.json", driver="GeoJSON")
+        ].to_file(DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON")
 
         # Daily counts
         daily.append(calculate_daily_counts(data_yr, year))
@@ -86,7 +95,9 @@ def run_daily_update():
         out[col] = daily[col].tolist()
     out["date"] = daily.index.tolist()
     json.dump(
-        out, open(DATA_DIR / f"shootings_cumulative_daily.json", "w"), ignore_nan=True
+        out,
+        open(DATA_DIR / "processed" / f"shootings_cumulative_daily.json", "w"),
+        ignore_nan=True,
     )
 
     # Update meta data
@@ -96,6 +107,42 @@ def run_daily_update():
     # save the download time
     meta = {"last_updated": now}
     json.dump(meta, meta_path.open(mode="w"))
+
+
+def calculate_street_hotspots(data):
+    """Calculate hot spots."""
+
+    # Drop missing
+    data_geo = replace_missing_geometries(data).to_crs(epsg=EPSG)
+    data_geo = data_geo.loc[~data_geo.geometry.is_empty]
+
+    # Match to
+    df = match_to_streets(data_geo, load_streets_directory(), "cartodb_id", buffer=200)
+
+    return data.merge(
+        df[["cartodb_id", "segment_id", "length", "street_name", "block_number"]],
+        on="cartodb_id",
+        how="left",
+    )
+
+    # # Count
+    # counts = df.groupby(["segment_id"]).size().reset_index(name="count")
+
+    # # Merge
+    # streets = load_streets_directory()
+    # X = (
+    #     streets.merge(counts, on="segment_id", how="left")
+    #     .assign(count=lambda df: df["count"].fillna(0))
+    #     .dropna(subset=["street_name"])
+    #     .rename(columns={"street_name": "street"})
+    # )
+
+    # # calculate the index
+    # CPL = np.log10(X["count"] / X["length"])
+    # CPL[~np.isfinite(CPL)] = 0  # no shootings equals a 0
+
+    # X = X.assign(rating=CPL).drop(labels=["length"], axis=1)
+    # return X.query("count > 0").to_crs(epsg=4326)
 
 
 def calculate_daily_counts(df, year):
@@ -134,7 +181,7 @@ def download_shootings_data():
                     (df.age > 30) & (df.age <= 45),
                     (df.age > 45),
                 ],
-                ["Under 18", "19 to 30", "31 to 45", "Greater than 45"],
+                ["Younger than 18", "19 to 30", "31 to 45", "Older than 45"],
                 default="Unknown",
             ),
         )

@@ -15,6 +15,7 @@ loguru = "*"
 click = "*"
 gun-violence-dashboard-data = {editable = true, path = "."}
 simplejson = "*"
+rtree = "*"
 
 [dev-packages]
 black = "==19.3b0"
