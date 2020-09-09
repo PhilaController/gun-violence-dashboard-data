@@ -146,18 +146,17 @@ def calculate_street_hotspots(streets, data):
     # Match to
     df = match_to_streets(data_geo, streets.copy(), "cartodb_id", buffer=200)
 
+    # drop long segments
+    print(len(df))
+    df = df.query("length < 5200")
+    print(len(df))
+
     # Merge back
     merged = data.merge(
         df[["cartodb_id", "segment_id", "length", "street_name", "block_number"]],
         on="cartodb_id",
         how="left",
     )
-
-    # long segments
-    long_segments = merged["length"] > 5200
-    merged.loc[
-        long_segments, ["segment_id", "length", "street_name", "block_number"]
-    ] = np.nan
 
     # store segment id as str
     merged["segment_id"] = (
