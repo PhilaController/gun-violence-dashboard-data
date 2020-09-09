@@ -63,6 +63,8 @@ def run_daily_update():
                 "date",
                 "age_group",
                 "segment_id",
+                "block_number",
+                "street_name",
             ]
         ].to_file(DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON")
 
@@ -100,6 +102,14 @@ def run_daily_update():
         ignore_nan=True,
     )
 
+    # Save streets
+    logger.info("Saving streets directory")
+    streets = load_streets_directory().to_crs(epsg=4326)
+    streets["segment_id"] = streets["segment_id"].apply(lambda x: f"{x:.0f}")
+    streets[["geometry", "segment_id",]].to_file(
+        DATA_DIR / "processed" / "streets.geojson", driver="GeoJSON"
+    )
+
     # Update meta data
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     meta_path = DATA_DIR / "meta.json"
@@ -119,11 +129,19 @@ def calculate_street_hotspots(data):
     # Match to
     df = match_to_streets(data_geo, load_streets_directory(), "cartodb_id", buffer=200)
 
-    return data.merge(
+    # Merge back
+    merged = data.merge(
         df[["cartodb_id", "segment_id", "length", "street_name", "block_number"]],
         on="cartodb_id",
         how="left",
     )
+
+    # store segment id as str
+    merged["segment_id"] = (
+        merged["segment_id"].fillna("").apply(lambda x: f"{x:.0f}" if x else "")
+    )
+
+    return merged
 
     # # Count
     # counts = df.groupby(["segment_id"]).size().reset_index(name="count")
