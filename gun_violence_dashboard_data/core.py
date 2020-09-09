@@ -65,6 +65,7 @@ def run_daily_update():
                 "segment_id",
                 "block_number",
                 "street_name",
+                "length",
             ]
         ].to_file(DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON")
 
@@ -106,7 +107,7 @@ def run_daily_update():
     logger.info("Saving streets directory")
     streets = load_streets_directory().to_crs(epsg=4326)
     streets["segment_id"] = streets["segment_id"].apply(lambda x: f"{x:.0f}")
-    streets[["geometry", "segment_id",]].to_file(
+    streets[["geometry", "segment_id", "street_name", "block_number"]].to_file(
         DATA_DIR / "processed" / "streets.geojson", driver="GeoJSON"
     )
 
