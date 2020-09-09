@@ -123,9 +123,9 @@ def run_daily_update():
     logger.info("Saving streets directory")
     streets = streets.to_crs(epsg=4326)
     streets["segment_id"] = streets["segment_id"].apply(lambda x: f"{x:.0f}")
-    streets[["geometry", "segment_id", "street_name", "block_number"]].to_file(
-        DATA_DIR / "processed" / "streets.geojson", driver="GeoJSON"
-    )
+    streets[
+        ["geometry", "segment_id", "street_name", "block_number", "length"]
+    ].to_file(DATA_DIR / "processed" / "streets.geojson", driver="GeoJSON")
 
     # Update meta data
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -152,6 +152,12 @@ def calculate_street_hotspots(streets, data):
         on="cartodb_id",
         how="left",
     )
+
+    # long segments
+    long_segments = merged["length"] > 5200
+    merged.loc[
+        long_segments, ["segment_id", "length", "street_name", "block_number"]
+    ] = np.nan
 
     # store segment id as str
     merged["segment_id"] = (
