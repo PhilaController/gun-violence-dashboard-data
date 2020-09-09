@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import simplejson as json
 from loguru import logger
+from shapely.geometry import MultiLineString
 
 from . import DATA_DIR
 from .streets import EPSG, load_streets_directory, match_to_streets
@@ -39,8 +40,23 @@ def run_daily_update():
     data = download_shootings_data()
     data.to_file(DATA_DIR / "raw" / "shootings.json", driver="GeoJSON")
 
+    # Load streets
+    streets = gpd.GeoDataFrame(
+        (
+            load_streets_directory()
+            .dropna(subset=["street_name"])
+            .groupby(["street_name", "block_number"])
+            .agg({"geometry": lambda x: MultiLineString(x.tolist()), "length": "sum",})
+            .reset_index()
+            .reset_index()
+            .rename(columns={"index": "segment_id"})
+        ),
+        crs="EPSG:2272",
+        geometry="geometry",
+    )
+
     logger.info("Calculating street hot spots")
-    data = calculate_street_hotspots(data)
+    data = calculate_street_hotspots(streets, data)
 
     # Loop over each year of data
     daily = []
@@ -105,7 +121,7 @@ def run_daily_update():
 
     # Save streets
     logger.info("Saving streets directory")
-    streets = load_streets_directory().to_crs(epsg=4326)
+    streets = streets.to_crs(epsg=4326)
     streets["segment_id"] = streets["segment_id"].apply(lambda x: f"{x:.0f}")
     streets[["geometry", "segment_id", "street_name", "block_number"]].to_file(
         DATA_DIR / "processed" / "streets.geojson", driver="GeoJSON"
@@ -120,15 +136,15 @@ def run_daily_update():
     json.dump(meta, meta_path.open(mode="w"))
 
 
-def calculate_street_hotspots(data):
+def calculate_street_hotspots(streets, data):
     """Calculate hot spots."""
 
     # Drop missing
-    data_geo = replace_missing_geometries(data).to_crs(epsg=EPSG)
+    data_geo = replace_missing_geometries(data).to_crs(epsg=EPSG).copy()
     data_geo = data_geo.loc[~data_geo.geometry.is_empty]
 
     # Match to
-    df = match_to_streets(data_geo, load_streets_directory(), "cartodb_id", buffer=200)
+    df = match_to_streets(data_geo, streets.copy(), "cartodb_id", buffer=200)
 
     # Merge back
     merged = data.merge(
