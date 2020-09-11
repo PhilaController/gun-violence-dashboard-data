@@ -10,7 +10,8 @@ from loguru import logger
 from shapely.geometry import MultiLineString
 
 from . import DATA_DIR
-from .homicide_scraper import PPDHomicideScraper
+from .courts import merge_courts_data
+from .homicides import PPDHomicideScraper
 from .streets import EPSG, load_streets_directory, match_to_streets
 from .tools import replace_missing_geometries
 
@@ -62,6 +63,9 @@ def run_daily_update():
 
     logger.info("Calculating street hot spots")
     data = calculate_street_hotspots(streets, data)
+
+    logger.info("Adding court information")
+    data = merge_courts_data(data)
 
     # Loop over each year of data
     daily = []
