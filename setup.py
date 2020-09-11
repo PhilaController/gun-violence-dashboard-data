@@ -35,6 +35,8 @@ setup(
         "loguru",
         "simplejson",
         "rtree",
+        "requests",
+        "bs4",
     ],
     entry_points={
         "console_scripts": ["gv_dashboard_data=gun_violence_dashboard_data.core:cli"]

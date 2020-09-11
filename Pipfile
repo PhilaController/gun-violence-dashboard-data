@@ -16,6 +16,9 @@ click = "*"
 gun-violence-dashboard-data = {editable = true, path = "."}
 simplejson = "*"
 rtree = "*"
+requests = "*"
+bs4 = "*"
+cached-property = "*"
 
 [dev-packages]
 black = "==19.3b0"

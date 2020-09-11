@@ -1,8 +1,7 @@
 import datetime
 
-import click
-
 import carto2gpd
+import click
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -11,6 +10,7 @@ from loguru import logger
 from shapely.geometry import MultiLineString
 
 from . import DATA_DIR
+from .homicide_scraper import PPDHomicideScraper
 from .streets import EPSG, load_streets_directory, match_to_streets
 from .tools import replace_missing_geometries
 
@@ -46,7 +46,12 @@ def run_daily_update():
             load_streets_directory()
             .dropna(subset=["street_name"])
             .groupby(["street_name", "block_number"])
-            .agg({"geometry": lambda x: MultiLineString(x.tolist()), "length": "sum",})
+            .agg(
+                {
+                    "geometry": lambda x: MultiLineString(x.tolist()),
+                    "length": "sum",
+                }
+            )
             .reset_index()
             .reset_index()
             .rename(columns={"index": "segment_id"})
@@ -127,6 +132,10 @@ def run_daily_update():
         ["geometry", "segment_id", "street_name", "block_number", "length"]
     ].to_file(DATA_DIR / "processed" / "streets.geojson", driver="GeoJSON")
 
+    # Scrape Police website
+    logger.info("Parsing PPD website for YTD homicides")
+    PPDHomicideScraper().run_update()
+
     # Update meta data
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     meta_path = DATA_DIR / "meta.json"
@@ -197,7 +206,7 @@ def calculate_daily_counts(df, year):
 
 def download_shootings_data():
     """Download and format shootings database from OpenDataPhilly.
-    
+
     Source
     ------
     https://www.opendataphilly.org/dataset/shooting-victims
