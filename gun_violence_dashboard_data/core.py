@@ -10,7 +10,7 @@ from loguru import logger
 from shapely.geometry import MultiLineString
 
 from . import DATA_DIR
-from .courts import merge_courts_data
+from .courts import merge_courts_data, scrape_courts_portal
 from .homicides import PPDHomicideScraper
 from .streets import EPSG, load_streets_directory, match_to_streets
 from .tools import replace_missing_geometries
@@ -258,6 +258,12 @@ def cli() -> None:
 def daily_update():
     """Run the daily update."""
     run_daily_update()
+
+
+@cli.command()  # @cli, not @click!
+def scrape():
+    """Run courts scraper"""
+    scrape_courts_portal()
 
 
 if __name__ == "__main__":

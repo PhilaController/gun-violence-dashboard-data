@@ -7,6 +7,11 @@ PACKAGE_NAME = "gun_violence_dashboard_data"
 HERE = Path(__file__).parent.absolute()
 
 
+def get_requirements(filename):
+    with filename.open("r") as fh:
+        return [l.strip() for l in fh]
+
+
 def find_version(*paths: str) -> str:
     with HERE.joinpath(*paths).open("tr") as fp:
         version_file = fp.read()
@@ -26,19 +31,7 @@ setup(
     description="Python toolkit for preprocessing data for the City Controller's Gun Violence Dashboard",
     license="MIT",
     python_requires=">=3.7",
-    install_requires=[
-        "numpy",
-        "pandas",
-        "geopandas",
-        "click",
-        "carto2gpd",
-        "loguru",
-        "simplejson",
-        "rtree",
-        "requests",
-        "bs4",
-        "cached_property",
-    ],
+    install_requires=get_requirements(HERE / "requirements.txt"),
     entry_points={
         "console_scripts": ["gv_dashboard_data=gun_violence_dashboard_data.core:cli"]
     },
