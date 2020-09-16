@@ -298,7 +298,7 @@ def scrape_parallel(total_chunks, this_chunk, sleep):
     shootings["dc_key"] = shootings["dc_key"].astype(str)
 
     # Drop duplicates
-    shootings = shootings.drop_duplicates(subset=["dc_key"])
+    shootings = shootings.drop_duplicates(subset=["dc_key"]).sample(200)
 
     # Split
     assert this_chunk < total_chunks
@@ -320,7 +320,7 @@ def finalize_scraping():
     for f in sorted(files):
         combined.update(json.load(f.open("r")))
 
-    json.dump(combined, (DATA_DIR / "raw" / "scraped_courts_data.json").open("w"))
+    json.dump(combined, (DATA_DIR / "raw" / "scraped_courts_data2.json").open("w"))
 
 
 if __name__ == "__main__":
