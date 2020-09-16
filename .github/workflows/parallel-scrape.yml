@@ -1,0 +1,46 @@
+name: Parallel Courts Scraper
+on: push
+  # schedule:
+  #   - cron: '15 15 * * *'
+
+jobs:
+  env-install:
+    name: Parallel Courts Scraper
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chunk-number: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false 
+          fetch-depth: 0
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y libspatialindex-dev
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+      - name: Conda list
+        shell: bash -l {0}
+        run: conda list
+      - name: Download files
+        shell: bash -l {0}
+        run: |
+          pip install -e .
+          gv_dashboard_data scrape-parallel 10 ${{ matrix.chunk-number }}
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data*
+          git commit -m "Add courts scraper data"
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+    

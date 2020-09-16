@@ -261,9 +261,54 @@ def daily_update():
 
 
 @cli.command()  # @cli, not @click!
-def scrape():
+@click.option(
+    "--sleep",
+    default=7,
+    help="Total waiting time b/w scraping calls (in seconds)",
+    type=int,
+)
+def scrape(sleep):
     """Run courts scraper"""
-    scrape_courts_portal()
+
+    # Load the shootings data
+    shootings = gpd.read_file(DATA_DIR / "raw" / "shootings.json")
+    shootings["dc_key"] = shootings["dc_key"].astype(str)
+
+    # Drop duplicates
+    shootings = shootings.drop_duplicates(subset=["dc_key"])
+
+    # Run the scrape
+    scrape_courts_portal(shootings, sleep=sleep)
+
+
+@cli.command()  # @cli, not @click!
+@click.argument("total_chunks", type=int)
+@click.argument("this_chunk", type=int)
+@click.option(
+    "--sleep",
+    default=7,
+    help="Total waiting time b/w scraping calls (in seconds)",
+    type=int,
+)
+def scrape_parallel(total_chunks, this_chunk, sleep):
+    """Run courts scraper"""
+
+    # Load the shootings data
+    shootings = gpd.read_file(DATA_DIR / "raw" / "shootings.json")
+    shootings["dc_key"] = shootings["dc_key"].astype(str)
+
+    # Drop duplicates
+    shootings = shootings.drop_duplicates(subset=["dc_key"])
+
+    # Split
+    assert this_chunk < total_chunks
+    shootings_chunk = np.array_split(shootings, total_chunks)[this_chunk]
+
+    # Scrape in this
+    scrape_courts_portal(
+        shootings_chunk,
+        chunk=this_chunk,
+    )
 
 
 if __name__ == "__main__":

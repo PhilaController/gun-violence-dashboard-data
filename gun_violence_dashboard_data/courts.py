@@ -2,6 +2,7 @@ import json
 import time
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from loguru import logger
 from selenium import webdriver
@@ -12,7 +13,7 @@ from phl_courts_scraper.scrape import IncidentNumberScraper
 from . import DATA_DIR
 
 
-def scrape_courts_portal(sleep=7):
+def scrape_courts_portal(shootings, sleep=7, chunk=None):
     """Scrape"""
 
     # Initialize the driver in headless mode
@@ -23,17 +24,11 @@ def scrape_courts_portal(sleep=7):
     # Initialize the scraper
     scraper = IncidentNumberScraper(driver)
 
-    # Load the shootings data
-    shootings = gpd.read_file(DATA_DIR / "raw" / "shootings.json")
-    shootings["dc_key"] = shootings["dc_key"].astype(str)
-
     # Load existing courts data
     courts = json.load((DATA_DIR / "raw" / "scraped_courts_data.json").open("r"))
     existing_dc_keys = list(courts.keys())
 
     # Trim shootings to those without cases
-    shootings = shootings.loc[~shootings["dc_key"].isin(existing_dc_keys)]
-    shootings = shootings.drop_duplicates(subset=["dc_key"])
     N = len(shootings)
     logger.info(f"Scraping info for {N} shooting incidents")
 
@@ -66,9 +61,12 @@ def scrape_courts_portal(sleep=7):
         logger.info(f"Done scraping: {i} DC keys scraped")
         logger.info(f"  Found {len(new_results)} DC keys with new info")
 
-        # Update and save
-        courts.update(new_results)
-        json.dump(courts, (DATA_DIR / "raw" / "scraped_courts_data.json").open("w"))
+        # Save
+        if chunk is None:
+            filename = "scraped_courts_data.json"
+        else:
+            filename = f"scraped_courts_data_{chunk}.json"
+        json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
 
 
 def merge_courts_data(data):
