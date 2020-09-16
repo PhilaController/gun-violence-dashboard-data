@@ -43,7 +43,16 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Re-pull on failure
+        if: ${{ failure() }}
+        run: git pull origin master --autostash --rebase -X ours
+      - name: Re-push on failure
+        if: ${{ failure() }}
+        uses: ad-m/github-push-action@master
+        with:
+          branch: master
           force: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   combine-files:
     needs: parallel-scrape
