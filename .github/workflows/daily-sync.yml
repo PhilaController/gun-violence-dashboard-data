@@ -5,7 +5,7 @@ on:
     - cron: '15 15 * * *'
 
 jobs:
-  env-install:
+  daily-sync:
     name: Daily Data Sync
     runs-on: ubuntu-latest
     steps:

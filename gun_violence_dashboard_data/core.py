@@ -281,7 +281,7 @@ def scrape(sleep):
     scrape_courts_portal(shootings, sleep=sleep)
 
 
-@cli.command()  # @cli, not @click!
+@cli.command()
 @click.argument("total_chunks", type=int)
 @click.argument("this_chunk", type=int)
 @click.option(
@@ -291,7 +291,7 @@ def scrape(sleep):
     type=int,
 )
 def scrape_parallel(total_chunks, this_chunk, sleep):
-    """Run courts scraper"""
+    """Run courts scraper in parallel."""
 
     # Load the shootings data
     shootings = gpd.read_file(DATA_DIR / "raw" / "shootings.json")
@@ -309,6 +309,21 @@ def scrape_parallel(total_chunks, this_chunk, sleep):
         shootings_chunk,
         chunk=this_chunk,
     )
+
+
+@cli.command()
+def finalize_scraping():
+    """Finalize court scraping"""
+
+    # Load the shootings data
+    data_path = DATA_DIR / "raw"
+    files = data_path.glob("scraped_courts_data_*.json")
+
+    combined = {}
+    for f in sorted(files):
+        combined.update(json.load(f.open("r")))
+
+    json.dump(combined, (DATA_DIR / "raw" / "scraped_courts_data.json").open("w"))
 
 
 if __name__ == "__main__":
