@@ -305,10 +305,7 @@ def scrape_parallel(total_chunks, this_chunk, sleep):
     shootings_chunk = np.array_split(shootings, total_chunks)[this_chunk]
 
     # Scrape in this
-    scrape_courts_portal(
-        shootings_chunk,
-        chunk=this_chunk,
-    )
+    scrape_courts_portal(shootings_chunk, chunk=this_chunk, sleep=sleep)
 
 
 @cli.command()
