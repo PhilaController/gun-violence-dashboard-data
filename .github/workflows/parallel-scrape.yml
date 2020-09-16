@@ -37,6 +37,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git pull origin master
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data*
           git commit -m "Add chunked courts scraper data"
       - name: Push changes
