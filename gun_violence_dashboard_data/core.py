@@ -318,6 +318,7 @@ def finalize_scraping():
 
     combined = {}
     for f in sorted(files):
+        logger.info(f"Combining file: '{f}'")
         combined.update(json.load(f.open("r")))
 
     json.dump(combined, (DATA_DIR / "raw" / "scraped_courts_data.json").open("w"))

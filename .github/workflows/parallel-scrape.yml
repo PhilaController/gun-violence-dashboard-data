@@ -1,7 +1,7 @@
 name: Parallel Courts Scraper
-on: push
-  # schedule:
-  #   - cron: '15 15 * * *'
+on:
+  schedule:
+    - cron: '0 0 * * 0'
 
 jobs:
   parallel-scrape:
@@ -82,12 +82,12 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -e .
+          git pull origin master
           gv_dashboard_data finalize-scraping
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git pull origin master
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data.json
           git commit -m "Add combined courts scraper data"
       - name: Push changes
