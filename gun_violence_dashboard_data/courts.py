@@ -5,10 +5,9 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from loguru import logger
+from phl_courts_scraper.scrape import IncidentNumberScraper
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
-
-from phl_courts_scraper.scrape import IncidentNumberScraper
 
 from . import DATA_DIR
 
@@ -73,8 +72,8 @@ def merge_courts_data(data):
     """Merge courts data."""
 
     # Load raw courts data
-    data = json.load((DATA_DIR / "raw" / "scraped_courts_data.json").open("r"))
-    dc_keys = list(data.keys())
+    courts = json.load((DATA_DIR / "raw" / "scraped_courts_data.json").open("r"))
+    dc_keys = list(courts.keys())
 
     # Check dc keys
     data["dc_key"] = data["dc_key"].astype(str)
