@@ -32,7 +32,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -e .
-          gv_dashboard_data scrape-parallel 10 ${{ matrix.chunk-number }} --sleep 2
+          gv_dashboard_data scrape-courts-portal --nprocs 10 --pid ${{ matrix.chunk-number }} --sleep 2 --debug
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
@@ -83,7 +83,7 @@ jobs:
         run: |
           pip install -e .
           git pull origin master
-          gv_dashboard_data finalize-scraping
+          gv_dashboard_data finalize-courts-scraping --debug
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"

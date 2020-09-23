@@ -1,25 +1,33 @@
-import numpy as np
+from dataclasses import dataclass
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from cached_property import cached_property
+from loguru import logger
 
 from . import DATA_DIR
 
 
-class PPDHomicideScraper:
-    """Scrape homicide data from the Philadelphia Police Department's website"""
+@dataclass
+class PPDHomicideTotal:
+    """Total number of homicides scraped from the Philadelphia Police
+    Department's website.
+
+    This provides:
+        - Annual totals since 2007 for past years.
+        - Year-to-date homicide total for the current year.
+
+    Source
+    ------
+    https://www.phillypolice.com/crime-maps-stats/
+    """
+
+    debug: bool = False
 
     URL = "https://www.phillypolice.com/crime-maps-stats/"
 
-    def __init__(self):
-
-        # Parse daily data
-        self.historic = pd.read_csv(
-            DATA_DIR / "processed" / "homicides_daily.csv", parse_dates=[0]
-        ).sort_values("date", ascending=True)
-
-        # Parse the URL
+    def __post_init__(self):
         self.soup = BeautifulSoup(requests.get(self.URL).content, "html.parser")
 
     @cached_property
@@ -44,11 +52,6 @@ class PPDHomicideScraper:
             .text.split("\n")[0]
         )
         return pd.to_datetime(date + " 11:59:00")
-
-    @cached_property
-    def latest_historic_date(self):
-        """The latest data in the saved historic data file."""
-        return self.historic.iloc[-1]["date"]
 
     @cached_property
     def annual_totals(self):
@@ -82,31 +85,51 @@ class PPDHomicideScraper:
         if len(ytd_totals) != len(self.years):
             raise ValueError("Length mismatch between parsed years and homicides")
 
-        return pd.DataFrame({"year": self.years, "ytd": ytd_totals}).sort_values(
-            "year", ascending=False
-        )
+        # Return ytd totals, sorted in ascending order
+        out = pd.DataFrame({"year": self.years, "ytd": ytd_totals})
+        return out.sort_values("year", ascending=False)
 
-    def run_update(self):
-        """Run the scraping update."""
+    @property
+    def path(self):
+        return DATA_DIR / "raw" / "homicide_totals_daily.csv"
 
-        # Check if we need to update
-        if self.latest_historic_date < self.as_of_date:
+    def get(self):
+        """Get the shooting victims data, either loading
+        the currently downloaded version or a fresh copy."""
 
-            # Merge annual and YTD
+        # Load the database of daily totals
+        df = pd.read_csv(self.path, parse_dates=[0])
+
+        # Make sure it's in ascending order by date
+        return df.sort_values("date", ascending=True)
+
+    def update(self):
+        """Update the local data via scraping the PPD website."""
+
+        # Load the database
+        database = self.get()
+
+        # Latest database date
+        latest_database_date = database.iloc[-1]["date"]
+
+        # Update if we need to
+        if latest_database_date < self.as_of_date:
+
+            if self.debug:
+                logger.debug("Parsing PPD website to update YTD homicides")
+
+            # Merge annual totals (historic) and YTD (current year)
             data = pd.merge(self.annual_totals, self.ytd_totals, on="year", how="outer")
-            data.set_index("year").to_json(
-                DATA_DIR / "processed" / "homicide_totals.json", orient="index"
-            )
-
-            # Add new row
-            YTD = self.ytd_totals.iloc[0]["ytd"]
-            self.historic.loc[len(self.historic)] = [self.as_of_date, YTD]
 
             # Save it
-            self.historic.to_csv(
-                DATA_DIR / "processed" / "homicides_daily.csv", index=False
-            )
+            path = DATA_DIR / "processed" / "homicide_totals.json"
+            data.set_index("year").to_json(path, orient="index")
 
-            return True
+            # Add new row to database
+            YTD = self.ytd_totals.iloc[0]["ytd"]
+            self.database.loc[len(self.database)] = [self.as_of_date, YTD]
 
-        return False
+            # Save it
+            if self.debug:
+                logger.debug("Updating PPD homicides data file")
+            self.database.to_csv(self.path, index=False)

@@ -30,7 +30,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -e .
-          gv_dashboard_data daily-update
+          gv_dashboard_data daily-update --debug
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"

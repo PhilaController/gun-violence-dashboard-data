@@ -11,3 +11,4 @@ bs4
 cached_property
 phl_courts_scraper @ git+https://github.com/PhiladelphiaController/phl-courts-scraper@master
 webdriver_manager
+esri2gpd

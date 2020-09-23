@@ -1,83 +1,107 @@
-import json
 import time
+from dataclasses import dataclass
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import simplejson as json
 from loguru import logger
-from phl_courts_scraper.scrape import IncidentNumberScraper
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
+
+from phl_courts_scraper.scrape import IncidentNumberScraper
 
 from . import DATA_DIR
 
 
-def scrape_courts_portal(shootings, sleep=7, chunk=None):
-    """Scrape"""
+@dataclass
+class CourtInfoByIncident:
+    """Court information for shooting incidents scraped from the
+    PA's Unified Judicial System."""
 
-    # Initialize the driver in headless mode
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    debug: bool = False
 
-    # Initialize the scraper
-    scraper = IncidentNumberScraper(driver)
+    @property
+    def path(self):
+        return DATA_DIR / "raw" / "scraped_courts_data.json"
 
-    # Load existing courts data
-    courts = json.load((DATA_DIR / "raw" / "scraped_courts_data.json").open("r"))
-    existing_dc_keys = list(courts.keys())
+    def get(self):
+        """Get the shooting victims data, either loading
+        the currently downloaded version or a fresh copy."""
 
-    # Trim shootings to those without cases
-    N = len(shootings)
-    logger.info(f"Scraping info for {N} shooting incidents")
+        return json.load(self.path.open("r"))
 
-    # Save new results here
-    new_results = {}
+    def merge(self, data):
+        """Merge courts data."""
 
-    # Loop over shootings and scrape
-    try:
-        for i in range(N):
-            if i % 50 == 0:
-                logger.info(i)
-            dc_key = shootings.iloc[i]["dc_key"]
+        # Load raw courts data and existing dc keys
+        courts = self.get()
+        existing_dc_keys = list(courts.keys())
 
-            # Some DC keys for OIS are shorter
-            if len(dc_key) == 12:
+        if self.debug:
+            logger.debug("Merging in court case information")
 
-                # Scrape!
-                scraping_result = scraper.scrape(dc_key[2:])
+        out = data.copy()
+        return out.assign(
+            has_court_case=lambda df: np.select(
+                [df.dc_key.astype(str).isin(existing_dc_keys)], [True], default=False
+            )
+        )
 
-                # Save those with new results
-                if scraping_result is not None:
-                    new_results[dc_key] = scraping_result
+    def update(self, shootings, sleep=7, chunk=None, dry_run=False):
+        """Scrape the courts portal."""
 
-                # Sleep!
-                time.sleep(sleep)
+        # Initialize the driver in headless mode
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
-    except Exception as e:
-        logger.info(f"Exception raised: {e}")
-    finally:
-        logger.info(f"Done scraping: {i} DC keys scraped")
-        logger.info(f"  Found {len(new_results)} DC keys with new info")
+        # Initialize the scraper
+        scraper = IncidentNumberScraper(driver)
 
-        # Save
-        if chunk is None:
-            filename = "scraped_courts_data.json"
-        else:
-            filename = f"scraped_courts_data_{chunk}.json"
-        json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
+        # Load existing courts data
+        courts = self.get()
+        existing_dc_keys = list(courts.keys())
 
+        # Trim shootings to those without cases
+        N = len(shootings)
+        if self.debug:
+            logger.info(f"Scraping info for {N} shooting incidents")
 
-def merge_courts_data(data):
-    """Merge courts data."""
+        # Save new results here
+        new_results = {}
 
-    # Load raw courts data
-    courts = json.load((DATA_DIR / "raw" / "scraped_courts_data.json").open("r"))
-    dc_keys = list(courts.keys())
+        # Loop over shootings and scrape
+        try:
+            for i in range(N):
+                if self.debug and i % 50 == 0:
+                    logger.debug(i)
+                dc_key = shootings.iloc[i]["dc_key"]
 
-    # Check dc keys
-    data["dc_key"] = data["dc_key"].astype(str)
-    data["has_court_case"] = False
-    data.loc[data["dc_key"].isin(dc_keys), "has_court_case"] = True
+                # Some DC keys for OIS are shorter
+                if len(dc_key) == 12:
 
-    return data
+                    # Scrape!
+                    scraping_result = scraper.scrape(dc_key[2:])
+
+                    # Save those with new results
+                    if scraping_result is not None:
+                        new_results[dc_key] = scraping_result
+
+                    # Sleep!
+                    time.sleep(sleep)
+
+        except Exception as e:
+            logger.info(f"Exception raised: {e}")
+        finally:
+            if self.debug:
+                logger.debug(f"Done scraping: {i} DC keys scraped")
+                logger.debug(f"  Found {len(new_results)} DC keys with new info")
+
+            # Save
+            if not dry_run:
+                if chunk is None:
+                    filename = "scraped_courts_data.json"
+                else:
+                    filename = f"scraped_courts_data_{chunk}.json"
+                json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
