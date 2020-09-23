@@ -127,9 +127,9 @@ class PPDHomicideTotal:
 
             # Add new row to database
             YTD = self.ytd_totals.iloc[0]["ytd"]
-            self.database.loc[len(self.database)] = [self.as_of_date, YTD]
+            database.loc[len(database)] = [self.as_of_date, YTD]
 
             # Save it
             if self.debug:
                 logger.debug("Updating PPD homicides data file")
-            self.database.to_csv(self.path, index=False)
+            database.to_csv(self.path, index=False)
