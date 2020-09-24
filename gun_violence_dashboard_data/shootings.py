@@ -1,3 +1,5 @@
+"""Module for downloading and analyzing the shooting victims database."""
+
 import datetime
 from dataclasses import dataclass
 

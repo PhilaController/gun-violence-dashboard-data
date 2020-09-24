@@ -1,3 +1,6 @@
+"""Scrape the total homicide count from the Philadelphia Police Department's 
+Crime Stats website."""
+
 from dataclasses import dataclass
 
 import pandas as pd

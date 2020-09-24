@@ -1,3 +1,5 @@
+"""Load various geographic boundaries in Philadelphia."""
+
 import esri2gpd
 
 from . import DATA_DIR, EPSG

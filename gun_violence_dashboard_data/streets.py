@@ -1,3 +1,5 @@
+"""Module for calculating shooting hot spots by street block."""
+
 from dataclasses import dataclass
 
 import geopandas as gpd

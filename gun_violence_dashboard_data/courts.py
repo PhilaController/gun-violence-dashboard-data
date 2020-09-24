@@ -1,15 +1,13 @@
+"""Scrape court information from the PA's Unified Judicial System portal."""
 import time
 from dataclasses import dataclass
 
-import geopandas as gpd
 import numpy as np
-import pandas as pd
 import simplejson as json
 from loguru import logger
+from phl_courts_scraper.scrape import IncidentNumberScraper
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
-
-from phl_courts_scraper.scrape import IncidentNumberScraper
 
 from . import DATA_DIR
 

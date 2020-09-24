@@ -57,10 +57,10 @@
         },
         "carto2gpd": {
             "hashes": [
-                "sha256:d06e36c44fa82d1e534d2d8fec9e28c7fe1b4c448426dcd579b7640ea4c11501"
+                "sha256:cc273f0eaa49292f498fbaa114fd84e2ee66b3f0a7a332c5786db8d7c330c631"
             ],
             "index": "pypi",
-            "version": "==1.0.5"
+            "version": "==1.0.6"
         },
         "certifi": {
             "hashes": [
@@ -521,11 +521,11 @@
         },
         "identify": {
             "hashes": [
-                "sha256:d7da7de6825568daa4449858ce328ecc0e1ada2554d972a6f4f90e736aaf499a",
-                "sha256:e4db4796b3b0cf4f9cb921da51430abffff2d4ba7d7c521184ed5252bd90d461"
+                "sha256:7c22c384a2c9b32c5cc891d13f923f6b2653aa83e2d75d8f79be240d6c86c4f4",
+                "sha256:da683bfb7669fa749fc7731f378229e2dbf29a1d1337cbde04106f02236eb29d"
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-            "version": "==1.5.4"
+            "version": "==1.5.5"
         },
         "iniconfig": {
             "hashes": [

@@ -1,3 +1,4 @@
+"""The main command line module that defines the "gv_dashboard_data" tool."""
 import datetime
 
 import click
@@ -121,7 +122,13 @@ def daily_update(debug=False):
     help="If running in parallel, the total number of processes that will run.",
 )
 @click.option(
-    "--pid", type=int, default=0, help="If running in parallel, the local process id."
+    "--pid",
+    type=int,
+    default=0,
+    help=(
+        "If running in parallel, the local process id."
+        "This should be between 0 and number of processes."
+    ),
 )
 @click.option(
     "--sleep",
@@ -138,7 +145,11 @@ def daily_update(debug=False):
     help="Only run a random sample of incident numbers.",
 )
 def scrape_courts_portal(nprocs, pid, sleep, debug, sample, dry_run):
-    """Run courts scraper in parallel."""
+    """Scrape courts information from the PA's Unified Judicial System's portal.
+
+    This can be run in parallel by specifying a total
+    number of processes and a specific chunk to run.
+    """
 
     # Load the shootings data
     shootings = ShootingVictimsData(debug=debug).get(fresh=False)
@@ -169,7 +180,11 @@ def scrape_courts_portal(nprocs, pid, sleep, debug, sample, dry_run):
 @click.option("--debug", is_flag=True, help="Whether to log debug statements.")
 @click.option("--dry-run", is_flag=True, help="Do not save the results; dry run only.")
 def finalize_courts_scraping(debug, dry_run):
-    """Finalize courts scraping"""
+    """Finalize courts scraping by combining scraping results
+    computed in parallel.
+
+    This updates the "scraped_courts_data.json" data file.
+    """
 
     # Load the shootings data
     data_path = DATA_DIR / "raw"
