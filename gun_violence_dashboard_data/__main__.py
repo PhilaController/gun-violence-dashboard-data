@@ -2,9 +2,9 @@
 import datetime
 
 import click
+import numpy as np
 import simplejson as json
 from loguru import logger
-import numpy as np
 
 from . import DATA_DIR
 from .courts import CourtInfoByIncident

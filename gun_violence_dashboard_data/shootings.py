@@ -78,7 +78,7 @@ class ShootingVictimsData:
                     ),
                 )
                 .assign(
-                    race=lambda df: df.race.where(df.race != 1, other="H"),
+                    race=lambda df: df.race.where(df.latino != 1, other="H"),
                     age=lambda df: df.age.fillna("Unknown"),
                 )
                 .drop(
