@@ -98,6 +98,7 @@ class ShootingVictimsData:
                 df.pipe(_add_geo_info, get_zip_codes().to_crs(df.crs))
                 .pipe(_add_geo_info, get_police_districts().to_crs(df.crs))
                 .pipe(_add_geo_info, get_council_districts().to_crs(df.crs))
+                .pipe(_add_geo_info, get_neighborhoods().to_crs(df.crs))
             )
 
             # Save it

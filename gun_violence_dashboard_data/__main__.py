@@ -59,6 +59,14 @@ def save_geojson_layers(debug=False):
     path = DATA_DIR / "processed" / "geo" / "zip_codes.geojson"
     get_zip_codes().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
 
+    # ------------------------------------------------
+    # Part 5: Neighborhoods
+    # -------------------------------------------------
+    if debug:
+        logger.debug("Saving neighborhoods as a GeoJSON file")
+    path = DATA_DIR / "processed" / "geo" / "neighborhoods.geojson"
+    get_neighborhoods().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
+
 
 @cli.command()
 @click.option("--debug", is_flag=True, help="Whether to log debug statements.")

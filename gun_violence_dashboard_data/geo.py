@@ -42,3 +42,16 @@ def get_council_districts():
         .rename(columns={"DISTRICT": "council"})
         .to_crs(epsg=EPSG)
     )
+
+
+def get_neighborhoods():
+    """Neighborhoods in Philadelphia."""
+
+    return (
+        esri2gpd.get(
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Philly_NTAs/FeatureServer/0",
+            fields=["neighborhood"],
+        )
+        .rename(columns={"neighborhood": "hood"})
+        .to_crs(epsg=EPSG)
+    )
