@@ -209,6 +209,7 @@ class ShootingVictimsData:
                     "zip",
                     "council",
                     "police",
+                    "hood"
                 ]
             ].to_file(
                 DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON"
