@@ -68,12 +68,12 @@ class ShootingVictimsData:
                     age=lambda df: df.age.astype(float),
                     age_group=lambda df: np.select(
                         [
-                            df.age < 18,
-                            (df.age >= 18) & (df.age <= 30),
+                            df.age <= 17,
+                            (df.age > 17) & (df.age <= 30),
                             (df.age > 30) & (df.age <= 45),
                             (df.age > 45),
                         ],
-                        ["Younger than 18", "19 to 30", "31 to 45", "Older than 45"],
+                        ["Younger than 18", "18 to 30", "31 to 45", "Older than 45"],
                         default="Unknown",
                     ),
                 )
@@ -209,7 +209,7 @@ class ShootingVictimsData:
                     "zip",
                     "council",
                     "police",
-                    "hood"
+                    "hood",
                 ]
             ].to_file(
                 DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON"
