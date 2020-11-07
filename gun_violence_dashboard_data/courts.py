@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import simplejson as json
 from loguru import logger
-from phl_courts_scraper.scrape import IncidentNumberScraper
+from phl_courts_scraper.portal import UJSPortalScraper
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -55,7 +55,7 @@ class CourtInfoByIncident:
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
         # Initialize the scraper
-        scraper = IncidentNumberScraper(driver)
+        scraper = UJSPortalScraper(driver)
 
         # Load existing courts data
         courts = self.get()
@@ -80,11 +80,11 @@ class CourtInfoByIncident:
                 if len(dc_key) == 12:
 
                     # Scrape!
-                    scraping_result = scraper.scrape(dc_key[2:])
+                    scraping_result = scraper(dc_key[2:])
 
                     # Save those with new results
                     if scraping_result is not None:
-                        new_results[dc_key] = scraping_result
+                        new_results[dc_key] = scraping_result.to_dict()["data"]
 
                     # Sleep!
                     time.sleep(sleep)
