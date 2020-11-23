@@ -88,6 +88,13 @@ class ShootingVictimsData:
                 .reset_index(drop=True)
             )
 
+            # CHECKS
+            old_df = gpd.read_file(self.path)
+            if len(df) - len(old_df) > 100:
+                raise ValueError(
+                    "New data seems to have too many rows...please manually confirm new data is correct."
+                )
+
             def _add_geo_info(data, geo):
                 return gpd.sjoin(data, geo, how="left", op="within").drop(
                     labels=["index_right"], axis=1
