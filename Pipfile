@@ -22,6 +22,7 @@ cached-property = "*"
 phl-courts-scraper = {editable = true, git = "git://github.com/PhiladelphiaController/phl-courts-scraper", ref = "master"}
 webdriver-manager = "*"
 esri2gpd = "*"
+xlrd = "*"
 
 [dev-packages]
 black = "==19.3b0"
