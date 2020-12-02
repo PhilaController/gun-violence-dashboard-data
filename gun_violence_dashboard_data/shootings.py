@@ -91,6 +91,8 @@ class ShootingVictimsData:
             # CHECKS
             old_df = gpd.read_file(self.path)
             if len(df) - len(old_df) > 100:
+                logger.info(f"Length of new data: {len(df)}")
+                logger.info(f"Length of old data: {len(old_df)}")
                 raise ValueError(
                     "New data seems to have too many rows...please manually confirm new data is correct."
                 )
