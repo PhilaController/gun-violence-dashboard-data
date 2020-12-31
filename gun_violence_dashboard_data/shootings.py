@@ -189,8 +189,13 @@ class ShootingVictimsData:
     def save(self, data):
         """Save annual, processed data files."""
 
+        # years
+        years = sorted(data["year"].astype(int).unique())
+        years = [int(yr) for yr in years]
+        json.dump(years, (DATA_DIR / "processed" / "data_years.json").open("w"))
+
         # Save each year's data to separate file
-        for year in sorted(data["year"].unique()):
+        for year in years:
 
             if self.debug:
                 logger.debug(f"Saving {year} shootings as a GeoJSON file")
