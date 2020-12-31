@@ -191,7 +191,7 @@ class ShootingVictimsData:
 
         # years
         years = sorted(data["year"].astype(int).unique())
-        years = [int(yr) for yr in years]
+        years = [int(yr) for yr in reversed(years)]
         json.dump(years, (DATA_DIR / "processed" / "data_years.json").open("w"))
 
         # Save each year's data to separate file
