@@ -106,7 +106,7 @@ def daily_update(debug=False):
     # -----------------------------------------------------
     # Part 2: Cumulative daily victim totals
     # -----------------------------------------------------
-    victims.save_cumulative_totals(data, update_local=True)
+    # victims.save_cumulative_totals(data, update_local=True)
 
     # ------------------------------------------------------
     # Part 3: Homicide count scraped from PPD
