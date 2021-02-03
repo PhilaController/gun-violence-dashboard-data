@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from cached_property import cached_property
 from loguru import logger
+from shapely import ops
 from shapely.geometry import MultiLineString
 
 from . import DATA_DIR, EPSG
@@ -14,6 +15,16 @@ from . import DATA_DIR, EPSG
 
 def _as_string(x):
     return f"{x:.0f}" if x else ""
+
+
+def get_largest_contiguous_line(x):
+    multi = ops.linemerge(MultiLineString(x.tolist()))
+    if isinstance(multi, MultiLineString):
+        lengths = [line.length for line in multi]
+        idx = np.argmax(lengths)
+        return multi[idx]
+    else:
+        return multi
 
 
 def _match_to_streets(data, streets, key, buffer):
@@ -124,7 +135,7 @@ class StreetHotSpots:
                 .groupby(["street_name", "block_number"])
                 .agg(
                     {
-                        "geometry": lambda x: MultiLineString(x.tolist()),
+                        "geometry": lambda x: get_largest_contiguous_line(x),
                         "length": "sum",
                     }
                 )
@@ -156,11 +167,9 @@ class StreetHotSpots:
         new_info = df[["cartodb_id", "segment_id", "street_name", "block_number"]]
 
         # Merge new hot spot segment id back into the original data frame
-        return data.merge(
-            new_info,
-            on="cartodb_id",
-            how="left",
-        ).assign(segment_id=lambda df: df.segment_id.fillna("").apply(_as_string))
+        return data.merge(new_info, on="cartodb_id", how="left").assign(
+            segment_id=lambda df: df.segment_id.fillna("").apply(_as_string)
+        )
 
     def save(self):
         """"""
