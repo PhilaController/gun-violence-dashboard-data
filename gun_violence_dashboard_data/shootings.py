@@ -110,6 +110,9 @@ class ShootingVictimsData:
                 .pipe(_add_geo_info, get_neighborhoods().to_crs(df.crs))
             )
 
+            # if geo columns are missing, geometry should be NaN
+            df.loc[df["hood"].isnull(), "geometry"] = np.nan
+
             # Save it
             if update_local:
                 if self.debug:
