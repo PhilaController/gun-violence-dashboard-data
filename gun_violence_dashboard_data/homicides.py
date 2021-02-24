@@ -124,13 +124,21 @@ class PPDHomicideTotal:
             # Merge annual totals (historic) and YTD (current year)
             data = pd.merge(self.annual_totals, self.ytd_totals, on="year", how="outer")
 
-            # Save it
-            path = DATA_DIR / "processed" / "homicide_totals.json"
-            data.set_index("year").to_json(path, orient="index")
-
             # Add new row to database
             YTD = self.ytd_totals.iloc[0]["ytd"]
             database.loc[len(database)] = [self.as_of_date, YTD]
+
+            # Sanity check on new total
+            new_homicide_total = database.iloc[-1]["total"]
+            old_homicide_total = database.iloc[-2]["total"]
+            if new_homicide_total < old_homicide_total:
+                raise ValueError(
+                    f"New YTD homicide total ({new_homicide_total}) is less than previous YTD total ({old_homicide_total})"
+                )
+
+            # Save it
+            path = DATA_DIR / "processed" / "homicide_totals.json"
+            data.set_index("year").to_json(path, orient="index")
 
             # Save it
             if self.debug:
