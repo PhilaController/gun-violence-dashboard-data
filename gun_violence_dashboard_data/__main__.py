@@ -87,8 +87,22 @@ def daily_update(debug=False):
 
         6. Scrape and save the homicide count from the PPD's website.
     """
+    # ------------------------------------------------------
+    # Part 1: Homicide count scraped from PPD
+    # ------------------------------------------------------
+    homicide_count = PPDHomicideTotal(debug=debug)
+    homicide_count.update()
+
+    # Update meta data
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    meta_path = DATA_DIR / "meta.json"
+
+    # save the download time
+    meta = {"last_updated": now}
+    json.dump(meta, meta_path.open(mode="w"))
+
     # ---------------------------------------------------
-    # Part 1: Main shooting victims data file
+    # Part 2: Main shooting victims data file
     # ---------------------------------------------------
     victims = ShootingVictimsData(debug=debug)
     data = victims.get(fresh=True, update_local=True)
@@ -104,23 +118,9 @@ def daily_update(debug=False):
     victims.save(data)
 
     # -----------------------------------------------------
-    # Part 2: Cumulative daily victim totals
+    # Part 3: Cumulative daily victim totals
     # -----------------------------------------------------
     # victims.save_cumulative_totals(data, update_local=True)
-
-    # ------------------------------------------------------
-    # Part 3: Homicide count scraped from PPD
-    # ------------------------------------------------------
-    homicide_count = PPDHomicideTotal(debug=debug)
-    homicide_count.update()
-
-    # Update meta data
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    meta_path = DATA_DIR / "meta.json"
-
-    # save the download time
-    meta = {"last_updated": now}
-    json.dump(meta, meta_path.open(mode="w"))
 
 
 @cli.command()
