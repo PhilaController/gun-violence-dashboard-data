@@ -1,3 +1,41 @@
+[tool.poetry]
+name = "gun-violence-dashboard-data"
+version = "0.1.0"
+description = ""
+authors = ["Nick Hand <nicholas.adam.hand@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "*"
+numpy = "*"
+geopandas = "*"
+carto2gpd = "*"
+loguru = "*"
+click = "*"
+simplejson = "*"
+rtree = "*"
+requests = "*"
+bs4 = "*"
+cached-property = "*"
+phl-courts-scraper = {git = "https://github.com/PhiladelphiaController/phl-courts-scraper", branch = "master"}
+webdriver-manager = "*"
+esri2gpd = "*"
+xlrd = "*"
+
+
+[tool.poetry.dev-dependencies]
+black = "==19.3b0"
+flake8 = "*"
+isort = "*"
+mypy = "*"
+pre-commit = "*"
+pytest = "*"
+pytest-cov = "*"
+ipython = "^7.21.0"
+
+[tool.poetry.scripts]
+gv-dashboard-data = "gun_violence_dashboard_data.__main__:cli"
+
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta:__legacy__"
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

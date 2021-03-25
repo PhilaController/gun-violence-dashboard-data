@@ -29,8 +29,9 @@ jobs:
       - name: Download files
         shell: bash -l {0}
         run: |
-          pip install -e .
-          gv_dashboard_data daily-update --debug
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          poetry install
+          poetry run gv-dashboard-data daily-update --debug
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"

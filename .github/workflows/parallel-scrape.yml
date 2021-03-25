@@ -31,8 +31,9 @@ jobs:
       - name: Scrape
         shell: bash -l {0}
         run: |
-          pip install -e .
-          gv_dashboard_data scrape-courts-portal --nprocs 10 --pid ${{ matrix.chunk-number }} --sleep 2 --debug
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          poetry install
+          poetry run gv-dashboard-data scrape-courts-portal --nprocs 10 --pid ${{ matrix.chunk-number }} --sleep 2 --debug
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
@@ -81,9 +82,10 @@ jobs:
       - name: Combine
         shell: bash -l {0}
         run: |
-          pip install -e .
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          poetry install
           git pull origin master
-          gv_dashboard_data finalize-courts-scraping --debug
+          poetry run gv-dashboard-data finalize-courts-scraping --debug
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"

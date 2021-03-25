@@ -51,7 +51,7 @@ class CourtInfoByIncident:
 
         # Initialize the driver in headless mode
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
+        #options.add_argument("--headless")
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
         # Initialize the scraper
@@ -72,7 +72,7 @@ class CourtInfoByIncident:
         # Loop over shootings and scrape
         try:
             for i in range(N):
-                if self.debug and i % 50 == 0:
+                if self.debug:# and i % 50 == 0:
                     logger.debug(i)
                 dc_key = shootings.iloc[i]["dc_key"]
 
@@ -93,8 +93,7 @@ class CourtInfoByIncident:
             logger.info(f"Exception raised: {e}")
         finally:
             if self.debug:
-                logger.debug(f"Done scraping: {i} DC keys scraped")
-                logger.debug(f"  Found {len(new_results)} DC keys with new info")
+                logger.debug(f"Done scraping: {i+1} DC keys scraped")
 
             # Save
             if not dry_run:
