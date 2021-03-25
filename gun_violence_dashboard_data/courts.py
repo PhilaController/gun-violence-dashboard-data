@@ -72,7 +72,7 @@ class CourtInfoByIncident:
         # Loop over shootings and scrape
         try:
             for i in range(N):
-                if self.debug:# and i % 50 == 0:
+                if self.debug and i % 50 == 0:
                     logger.debug(i)
                 dc_key = shootings.iloc[i]["dc_key"]
 
