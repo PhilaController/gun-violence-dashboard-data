@@ -51,7 +51,7 @@ class CourtInfoByIncident:
 
         # Initialize the driver in headless mode
         options = webdriver.ChromeOptions()
-        #options.add_argument("--headless")
+        options.add_argument("--headless")
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
         # Initialize the scraper
