@@ -624,6 +624,7 @@ version = "0.0.1"
 [package.dependencies]
 desert = "*"
 intervaltree = "*"
+loguru = "*"
 numpy = "*"
 pandas = "*"
 pdfplumber = "*"
@@ -632,7 +633,7 @@ tryagain = "*"
 webdriver_manager = "*"
 
 [package.source]
-reference = "41e10de04f545590d08e7fb2d42c1feeadd4d3ab"
+reference = "492ddb27887e06ddba48c053688cad34f725159e"
 type = "git"
 url = "https://github.com/PhiladelphiaController/phl-courts-scraper"
 [[package]]
