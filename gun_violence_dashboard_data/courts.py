@@ -34,7 +34,7 @@ class CourtInfoByIncident:
 
         # Load raw courts data and existing dc keys
         courts = self.get()
-        existing_dc_keys = list(courts.keys())
+        existing_dc_keys = [key for key in courts.keys() if len(courts[key])]
 
         if self.debug:
             logger.debug("Merging in court case information")
