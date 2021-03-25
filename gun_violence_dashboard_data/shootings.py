@@ -117,6 +117,7 @@ class ShootingVictimsData:
                 .pipe(_add_geo_info, get_police_districts().to_crs(df.crs))
                 .pipe(_add_geo_info, get_council_districts().to_crs(df.crs))
                 .pipe(_add_geo_info, get_neighborhoods().to_crs(df.crs))
+                .pipe(_add_geo_info, get_program_footprints().to_crs(df.crs))
             )
 
             # if geo columns are missing, geometry should be NaN
@@ -236,6 +237,7 @@ class ShootingVictimsData:
                     "council",
                     "police",
                     "hood",
+                    "footprint"
                 ]
             ].to_file(
                 DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON"

@@ -1,8 +1,18 @@
 """Load various geographic boundaries in Philadelphia."""
 
 import esri2gpd
+import geopandas as gpd
 
 from . import DATA_DIR, EPSG
+
+def get_program_footprints():
+    """Program footprints in Philadelphia."""
+
+    return (
+        gpd.read_file(DATA_DIR / "raw" / "footprints.geojson")[["name", "geometry"]]
+        .to_crs(epsg=EPSG)
+        .rename(columns={"name": "footprint"})
+    )
 
 
 def get_police_districts():
