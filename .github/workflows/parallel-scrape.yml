@@ -32,6 +32,7 @@ jobs:
         shell: bash -l {0}
         run: |
           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          source $HOME/.poetry/env
           poetry install
           poetry run gv-dashboard-data scrape-courts-portal --nprocs 10 --pid ${{ matrix.chunk-number }} --sleep 2 --debug
       - name: Commit files
@@ -83,6 +84,7 @@ jobs:
         shell: bash -l {0}
         run: |
           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          source $HOME/.poetry/env
           poetry install
           git pull origin master
           poetry run gv-dashboard-data finalize-courts-scraping --debug
