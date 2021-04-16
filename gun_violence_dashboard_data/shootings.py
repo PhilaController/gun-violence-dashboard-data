@@ -216,6 +216,9 @@ class ShootingVictimsData:
             # Save in EPSG = 4326
             data_yr = data.query(f"year == {year}").to_crs(epsg=4326)
 
+            # Convert the date column
+            data_yr["date"] = data_yr["date"].dt.strftime("%Y/%m/%d %H:%M:%S")
+
             # Extract columns and save
             data_yr[
                 [
