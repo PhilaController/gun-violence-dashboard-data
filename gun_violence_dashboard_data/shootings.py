@@ -94,9 +94,9 @@ class ShootingVictimsData:
             if len(df) - len(old_df) > TOLERANCE:
                 logger.info(f"Length of new data: {len(df)}")
                 logger.info(f"Length of old data: {len(old_df)}")
-                raise ValueError(
-                    "New data seems to have too many rows...please manually confirm new data is correct."
-                )
+                # raise ValueError(
+                #     "New data seems to have too many rows...please manually confirm new data is correct."
+                # )
 
             TOLERANCE = 10
             if len(old_df) - len(df) > TOLERANCE:
