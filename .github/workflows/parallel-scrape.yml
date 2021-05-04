@@ -1,7 +1,7 @@
 name: Parallel Courts Scraper
-on:
-  schedule:
-    - cron: '15 2 * * 0'
+on: push
+  # schedule:
+  #   - cron: '15 2 * * 0'
 
 jobs:
   parallel-scrape:
@@ -34,24 +34,16 @@ jobs:
           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
           source $HOME/.poetry/env
           poetry install
-          poetry run gv-dashboard-data scrape-courts-portal --nprocs 10 --pid ${{ matrix.chunk-number }} --sleep 2 --debug
+          poetry run gv-dashboard-data scrape-courts-portal --nprocs 10 --pid ${{ matrix.chunk-number }} --sleep 2 --debug --sample 100
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git pull origin master
+          git pull origin master --autostash --rebase -X ours
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data*
           git commit -m "Add courts scraper data (chunk #${{ matrix.chunk-number }})"
       - name: Push changes
         continue-on-error: true
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Re-pull on failure
-        if: ${{ failure() }}
-        run: git pull origin master --autostash --rebase -X ours
-      - name: Re-push on failure
-        if: ${{ failure() }}
         uses: ad-m/github-push-action@master
         with:
           branch: master
