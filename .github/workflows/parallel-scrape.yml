@@ -48,7 +48,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Re-pull on failure
         if: ${{ failure() }}
-        run: 
+        run: git pull origin ${{ github.ref }} --autostash --rebase -X ours
       - name: Re-push on failure
         if: ${{ failure() }}
         uses: ad-m/github-push-action@master
