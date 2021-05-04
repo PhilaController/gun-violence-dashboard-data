@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          ref: courts-scraper-${{ matrix.chunk-number }}
           persist-credentials: false 
           fetch-depth: 0
       - uses: conda-incubator/setup-miniconda@v2
@@ -39,8 +40,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git pull origin master
-          git checkout -b courts-scraper-${{ matrix.chunk-number }}
+          git pull origin courts-scraper-${{ matrix.chunk-number }}
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data*
           git commit -m "Add courts scraper data (chunk #${{ matrix.chunk-number }})"
       - name: Push changes
@@ -56,6 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          ref: master
           persist-credentials: false 
           fetch-depth: 0
       - uses: conda-incubator/setup-miniconda@v2
