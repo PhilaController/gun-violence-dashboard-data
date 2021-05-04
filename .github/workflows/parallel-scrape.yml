@@ -73,7 +73,7 @@ jobs:
         run: conda list
       - name: merge branches
         env:
-          BRANCHES: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+          BRANCHES: 0 1 2 3 4 5 6 7 8 9
         run: for b in $BRANCHES; do git merge courts-scraper-$b; done
       - name: Combine
         shell: bash -l {0}
