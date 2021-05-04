@@ -2,7 +2,9 @@ name: Daily Data Sync
 
 on:
   schedule:
+    - cron: '11 15 * * *'
     - cron: '15 15 * * *'
+    - cron: '17 15 * * *'
 
 jobs:
   daily-sync:
