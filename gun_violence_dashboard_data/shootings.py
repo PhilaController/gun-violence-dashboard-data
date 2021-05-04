@@ -57,6 +57,7 @@ class ShootingVictimsData:
             df = (
                 carto2gpd.get(self.ENDPOINT, self.TABLE_NAME)
                 .assign(
+                    dc_key=lambda df: df.dc_key.astype(float).astype(int).astype(str),
                     time=lambda df: df.time.replace("<Null>", np.nan).fillna(
                         "00:00:00"
                     ),
@@ -129,14 +130,21 @@ class ShootingVictimsData:
                 df.to_file(self.path, driver="GeoJSON")
 
         # Load from disk, fill missing geometries and convert CRS
-        return (
-            gpd.read_file(self.path)
+        out = (
+            gpd.read_file(self.path, dtype={"dc_key": str})
             .assign(
                 geometry=lambda df: df.geometry.fillna(Point()),
                 date=lambda df: pd.to_datetime(df.date),
             )
             .to_crs(epsg=EPSG)
         )
+
+        # Check dc_key is properly formatted
+        assert (
+            out["dc_key"].str.contains(".0", regex=False).sum() == 0
+        ), "dc_key not properly formatted"
+
+        return out
 
     def save_cumulative_totals(self, data, update_local=True):
         """Calculate the cumulative daily total."""
