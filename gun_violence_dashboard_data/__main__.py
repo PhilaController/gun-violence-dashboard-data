@@ -162,7 +162,7 @@ def scrape_courts_portal(nprocs, pid, sleep, debug, sample, dry_run):
 
     # Load the shootings data
     shootings = ShootingVictimsData(debug=debug).get(fresh=False)
-    shootings["dc_key"] = shootings["dc_key"].astype(str)
+    shootings["dc_key"] = shootings["dc_key"].astype(float).astype(int).astype(str)
 
     # Drop duplicates
     shootings = shootings.drop_duplicates(subset=["dc_key"])
