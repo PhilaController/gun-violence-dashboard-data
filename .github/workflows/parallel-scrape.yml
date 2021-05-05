@@ -1,7 +1,7 @@
 name: Parallel Courts Scraper
-on: push
-  # schedule:
-  #   - cron: '15 2 * * 0'
+on:
+  schedule:
+    - cron: '15 2 * * 0'
 
 jobs:
   parallel-scrape:
