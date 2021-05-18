@@ -37,6 +37,7 @@ class ShootingVictimsData:
     database from Open Data Philly."""
 
     debug: bool = False
+    ignore_checks: bool = False
 
     ENDPOINT = "https://phl.carto.com/api/v2/sql"
     TABLE_NAME = "shootings"
@@ -90,22 +91,23 @@ class ShootingVictimsData:
             )
 
             # CHECKS
-            old_df = gpd.read_file(self.path)
-            TOLERANCE = 100
-            if len(df) - len(old_df) > TOLERANCE:
-                logger.info(f"Length of new data: {len(df)}")
-                logger.info(f"Length of old data: {len(old_df)}")
-                # raise ValueError(
-                #     "New data seems to have too many rows...please manually confirm new data is correct."
-                # )
+            if not self.ignore_checks:
+                old_df = gpd.read_file(self.path)
+                TOLERANCE = 100
+                if len(df) - len(old_df) > TOLERANCE:
+                    logger.info(f"Length of new data: {len(df)}")
+                    logger.info(f"Length of old data: {len(old_df)}")
+                    raise ValueError(
+                        "New data seems to have too many rows...please manually confirm new data is correct."
+                    )
 
-            TOLERANCE = 10
-            if len(old_df) - len(df) > TOLERANCE:
-                logger.info(f"Length of new data: {len(df)}")
-                logger.info(f"Length of old data: {len(old_df)}")
-                raise ValueError(
-                    "New data seems to have too few rows...please manually confirm new data is correct."
-                )
+                TOLERANCE = 10
+                if len(old_df) - len(df) > TOLERANCE:
+                    logger.info(f"Length of new data: {len(df)}")
+                    logger.info(f"Length of old data: {len(old_df)}")
+                    raise ValueError(
+                        "New data seems to have too few rows...please manually confirm new data is correct."
+                    )
 
             def _add_geo_info(data, geo):
                 return gpd.sjoin(data, geo, how="left", op="within").drop(

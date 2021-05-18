@@ -70,7 +70,8 @@ def save_geojson_layers(debug=False):
 
 @cli.command()
 @click.option("--debug", is_flag=True, help="Whether to log debug statements.")
-def daily_update(debug=False):
+@click.option("--ignore-checks", is_flag=True, help="Whether to ignore any validation checks.")
+def daily_update(debug=False, ignore_checks=False):
     """Run the daily pre-processing update.
 
     This runs the following steps:
@@ -104,7 +105,7 @@ def daily_update(debug=False):
     # ---------------------------------------------------
     # Part 2: Main shooting victims data file
     # ---------------------------------------------------
-    victims = ShootingVictimsData(debug=debug)
+    victims = ShootingVictimsData(debug=debug, ignore_checks=ignore_checks)
     data = victims.get(fresh=True, update_local=True)
 
     # Value-added info for hot spots and court info
