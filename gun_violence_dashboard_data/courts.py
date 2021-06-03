@@ -69,7 +69,7 @@ class CourtInfoByIncident:
         )
 
     def update(
-        self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=30, max_sleep=60
+        self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=30, max_sleep=120
     ):
         """Scrape the courts portal."""
 
