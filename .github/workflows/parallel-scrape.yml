@@ -1,7 +1,7 @@
 name: Parallel Courts Scraper
-on: push
-  # schedule:
-  #   - cron: '15 2 * * 0'
+on:
+  schedule:
+    - cron: '15 2 * * 0'
 
 jobs:
   parallel-scrape:
@@ -76,8 +76,6 @@ jobs:
       #   env:
       #     BRANCHES: 0 1 2 3 4 5 6 7 8 9
       #   run: |
-      #     git config --local user.email "action@github.com"
-      #     git config --local user.name "GitHub Action"
       #     for b in $BRANCHES; do git merge origin/courts-scraper-$b; done
       - name: Combine
         shell: bash -l {0}
@@ -88,6 +86,8 @@ jobs:
           poetry run gv-dashboard-data finalize-courts-scraping --debug
       - name: Commit files
         run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data.json
           git commit -m "Add combined courts scraper data"
       - name: Push changes
