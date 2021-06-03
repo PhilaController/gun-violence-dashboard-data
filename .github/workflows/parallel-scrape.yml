@@ -44,7 +44,7 @@ jobs:
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data*
           git commit -m "Add courts scraper data (chunk #${{ matrix.chunk-number }})"
       - name: Push changes
-        uses: ad-m/github-push-action@0.6.0
+        uses: ad-m/github-push-action@v0.6.0
         with:
           branch: master
           github_token: ${{ secrets.GITHUB_TOKEN }}
