@@ -115,20 +115,17 @@ class CourtInfoByIncident:
                 time.sleep(sleep)
 
         # Loop over shootings and scrape
-        try:
-            for i in range(N):
-                _call(i)
+        for i in range(N):
+            _call(i)
 
-        except Exception as e:
-            logger.info(f"Exception raised: {e}")
-        finally:
-            if self.debug:
-                logger.debug(f"Done scraping: {i+1} DC keys scraped")
+        # Log
+        if self.debug:
+            logger.debug(f"Done scraping: {i+1} DC keys scraped")
 
-            # Save
-            if not dry_run:
-                if chunk is None:
-                    filename = "scraped_courts_data.json"
-                else:
-                    filename = f"scraped_courts_data_{chunk}.json"
-                json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
+        # Save
+        if not dry_run:
+            if chunk is None:
+                filename = "scraped_courts_data.json"
+            else:
+                filename = f"scraped_courts_data_{chunk}.json"
+            json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
