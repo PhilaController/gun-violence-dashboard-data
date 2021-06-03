@@ -341,7 +341,7 @@ description = "File identification library for Python"
 name = "identify"
 optional = false
 python-versions = ">=3.6.1"
-version = "2.2.7"
+version = "2.2.8"
 
 [package.extras]
 license = ["editdistance-s"]
@@ -649,7 +649,7 @@ tryagain = "*"
 webdriver_manager = "*"
 
 [package.source]
-reference = "758bfbddc5ca6673005b30a7ef1fc18047a49376"
+reference = "1110453785728e12486ac0abc9b6da79f4702dca"
 type = "git"
 url = "https://github.com/PhiladelphiaController/phl-courts-scraper"
 [[package]]
@@ -1069,7 +1069,7 @@ docs = ["sphinx"]
 test = ["pytest", "pytest-cov"]
 
 [metadata]
-content-hash = "9a47edff975110bd9f7db591c819074c39f31415bd71e78e30aa81c08baf894a"
+content-hash = "d8edf89c6fbb97587f139d2e3e7fe2ff36ee516b90d29547cb1d3909f33755ed"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1246,8 +1246,8 @@ geopandas = [
     {file = "geopandas-0.9.0.tar.gz", hash = "sha256:63972ab4dc44c4029f340600dcb83264eb8132dd22b104da0b654bef7f42630a"},
 ]
 identify = [
-    {file = "identify-2.2.7-py2.py3-none-any.whl", hash = "sha256:92d6ad08eca19ceb17576733759944b94c0761277ddc3acf65e75e57ef190e32"},
-    {file = "identify-2.2.7.tar.gz", hash = "sha256:c29e74c3671fe9537715cb695148231d777170ca1498e1c30c675d4ea782afe9"},
+    {file = "identify-2.2.8-py2.py3-none-any.whl", hash = "sha256:3a74cf41f1a0bde21e2f196a1727a608629339d9897226bad07b22e0bbde6faa"},
+    {file = "identify-2.2.8.tar.gz", hash = "sha256:7d4a73d58869a484d4ba8892793c80e30aa699e77707f26c1049486ef9be415f"},
 ]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},

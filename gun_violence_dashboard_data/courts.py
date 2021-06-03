@@ -1,4 +1,5 @@
 """Scrape court information from the PA's Unified Judicial System portal."""
+import random
 import time
 from dataclasses import dataclass
 
@@ -7,6 +8,7 @@ import simplejson as json
 from loguru import logger
 from phl_courts_scraper.portal import UJSPortalScraper
 from selenium import webdriver
+from tryagain import retries
 from webdriver_manager.chrome import ChromeDriverManager
 
 from . import DATA_DIR
@@ -18,6 +20,19 @@ class CourtInfoByIncident:
     PA's Unified Judicial System."""
 
     debug: bool = False
+
+    def __post_init__(self):
+        self._init_scraper()
+
+    def _init_scraper(self):
+
+        # Initialize the driver in headless mode
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+
+        # Initialize the scraper
+        self.scraper = UJSPortalScraper(self.driver)
 
     @property
     def path(self):
@@ -53,16 +68,10 @@ class CourtInfoByIncident:
             )
         )
 
-    def update(self, shootings, sleep=7, chunk=None, dry_run=False):
+    def update(
+        self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=10, max_sleep=60
+    ):
         """Scrape the courts portal."""
-
-        # Initialize the driver in headless mode
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
-        driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
-
-        # Initialize the scraper
-        scraper = UJSPortalScraper(driver)
 
         # Load existing courts data
         courts = self.get()
@@ -76,25 +85,39 @@ class CourtInfoByIncident:
         # Save new results here
         new_results = {}
 
+        def cleanup():
+            self.driver.close()
+            logger.info("Retrying...")
+
+        @retries(
+            max_attempts=5,
+            cleanup_hook=cleanup,
+            pre_retry_hook=self._init_scraper,
+            wait=lambda n: min(min_sleep + 2 ** n + random.random(), max_sleep),
+        )
+        def _call(i):
+
+            # if self.debug and i % 50 == 0:
+            logger.debug(i)
+            dc_key = shootings.iloc[i]["dc_key"]
+
+            # Some DC keys for OIS are shorter
+            if len(dc_key) == 12:
+
+                # Scrape!
+                scraping_result = self.scraper(dc_key[2:])
+
+                # Save those with new results
+                if scraping_result is not None:
+                    new_results[dc_key] = scraping_result.to_dict()["data"]
+
+                # Sleep!
+                time.sleep(sleep)
+
         # Loop over shootings and scrape
         try:
             for i in range(N):
-                if self.debug and i % 50 == 0:
-                    logger.debug(i)
-                dc_key = shootings.iloc[i]["dc_key"]
-
-                # Some DC keys for OIS are shorter
-                if len(dc_key) == 12:
-
-                    # Scrape!
-                    scraping_result = scraper(dc_key[2:])
-
-                    # Save those with new results
-                    if scraping_result is not None:
-                        new_results[dc_key] = scraping_result.to_dict()["data"]
-
-                    # Sleep!
-                    time.sleep(sleep)
+                _call(i)
 
         except Exception as e:
             logger.info(f"Exception raised: {e}")

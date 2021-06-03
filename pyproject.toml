@@ -21,6 +21,7 @@ phl-courts-scraper = {git = "https://github.com/PhiladelphiaController/phl-court
 webdriver-manager = "*"
 esri2gpd = "*"
 xlrd = "*"
+tryagain = "^1.0"
 
 
 [tool.poetry.dev-dependencies]
