@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: courts-scraper-${{ matrix.chunk-number }}
+          ref: master
           persist-credentials: false 
           fetch-depth: 0
       - uses: conda-incubator/setup-miniconda@v2
@@ -40,13 +40,13 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git pull origin courts-scraper-${{ matrix.chunk-number }}
+          git pull origin master
           git add -f gun_violence_dashboard_data/data/raw/scraped_courts_data*
           git commit -m "Add courts scraper data (chunk #${{ matrix.chunk-number }})"
       - name: Push changes
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@0.6.0
         with:
-          branch: courts-scraper-${{ matrix.chunk-number }}
+          branch: master
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   combine-files:
@@ -72,13 +72,13 @@ jobs:
       - name: Conda list
         shell: bash -l {0}
         run: conda list
-      - name: merge branches
-        env:
-          BRANCHES: 0 1 2 3 4 5 6 7 8 9
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          for b in $BRANCHES; do git merge origin/courts-scraper-$b; done
+      # - name: merge branches
+      #   env:
+      #     BRANCHES: 0 1 2 3 4 5 6 7 8 9
+      #   run: |
+      #     git config --local user.email "action@github.com"
+      #     git config --local user.name "GitHub Action"
+      #     for b in $BRANCHES; do git merge origin/courts-scraper-$b; done
       - name: Combine
         shell: bash -l {0}
         run: |
