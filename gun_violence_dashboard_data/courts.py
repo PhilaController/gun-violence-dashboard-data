@@ -69,7 +69,7 @@ class CourtInfoByIncident:
         )
 
     def update(
-        self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=10, max_sleep=60
+        self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=30, max_sleep=60
     ):
         """Scrape the courts portal."""
 
@@ -90,15 +90,15 @@ class CourtInfoByIncident:
             logger.info("Retrying...")
 
         @retries(
-            max_attempts=5,
+            max_attempts=15,
             cleanup_hook=cleanup,
             pre_retry_hook=self._init_scraper,
             wait=lambda n: min(min_sleep + 2 ** n + random.random(), max_sleep),
         )
         def _call(i):
 
-            # if self.debug and i % 50 == 0:
-            logger.debug(i)
+            if self.debug and i % 25 == 0:
+                logger.debug(i)
             dc_key = shootings.iloc[i]["dc_key"]
 
             # Some DC keys for OIS are shorter
@@ -115,17 +115,20 @@ class CourtInfoByIncident:
                 time.sleep(sleep)
 
         # Loop over shootings and scrape
-        for i in range(N):
-            _call(i)
+        try:
+            for i in range(N):
+                _call(i)
 
-        # Log
-        if self.debug:
-            logger.debug(f"Done scraping: {i+1} DC keys scraped")
+        except Exception as e:
+            logger.info(f"Exception raised: {e}")
+        finally:
+            if self.debug:
+                logger.debug(f"Done scraping: {i+1} DC keys scraped")
 
-        # Save
-        if not dry_run:
-            if chunk is None:
-                filename = "scraped_courts_data.json"
-            else:
-                filename = f"scraped_courts_data_{chunk}.json"
-            json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
+            # Save
+            if not dry_run:
+                if chunk is None:
+                    filename = "scraped_courts_data.json"
+                else:
+                    filename = f"scraped_courts_data_{chunk}.json"
+                json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
