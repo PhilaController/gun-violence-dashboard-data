@@ -70,8 +70,18 @@ def save_geojson_layers(debug=False):
 
 @cli.command()
 @click.option("--debug", is_flag=True, help="Whether to log debug statements.")
-@click.option("--ignore-checks", is_flag=True, help="Whether to ignore any validation checks.")
-def daily_update(debug=False, ignore_checks=False):
+@click.option(
+    "--ignore-checks", is_flag=True, help="Whether to ignore any validation checks."
+)
+@click.option(
+    "--homicides-only", is_flag=True, help="Whether to process the Homicide data."
+)
+@click.option(
+    "--shootings-only", is_flag=True, help="Whether to process the shooting data."
+)
+def daily_update(
+    debug=False, ignore_checks=False, homicides_only=False, shootings_only=False
+):
     """Run the daily pre-processing update.
 
     This runs the following steps:
@@ -88,35 +98,40 @@ def daily_update(debug=False, ignore_checks=False):
 
         6. Scrape and save the homicide count from the PPD's website.
     """
+    # Do all parts
+    process_all = not (homicides_only or shootings_only)
+
     # ------------------------------------------------------
     # Part 1: Homicide count scraped from PPD
     # ------------------------------------------------------
-    homicide_count = PPDHomicideTotal(debug=debug)
-    homicide_count.update()
+    if process_all or homicides_only:
+        homicide_count = PPDHomicideTotal(debug=debug)
+        homicide_count.update()
 
-    # Update meta data
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    meta_path = DATA_DIR / "meta.json"
+        # Update meta data
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        meta_path = DATA_DIR / "meta.json"
 
-    # save the download time
-    meta = {"last_updated": now}
-    json.dump(meta, meta_path.open(mode="w"))
+        # save the download time
+        meta = {"last_updated": now}
+        json.dump(meta, meta_path.open(mode="w"))
 
     # ---------------------------------------------------
     # Part 2: Main shooting victims data file
     # ---------------------------------------------------
-    victims = ShootingVictimsData(debug=debug, ignore_checks=ignore_checks)
-    data = victims.get(fresh=True, update_local=True)
+    if process_all or shootings_only:
+        victims = ShootingVictimsData(debug=debug, ignore_checks=ignore_checks)
+        data = victims.get(fresh=True, update_local=True)
 
-    # Value-added info for hot spots and court info
-    hotspots = StreetHotSpots(debug=debug)
-    courts = CourtInfoByIncident(debug=debug)
+        # Value-added info for hot spots and court info
+        hotspots = StreetHotSpots(debug=debug)
+        courts = CourtInfoByIncident(debug=debug)
 
-    # Merge in the value-added info
-    data = data.pipe(hotspots.merge).pipe(courts.merge)
+        # Merge in the value-added info
+        data = data.pipe(hotspots.merge).pipe(courts.merge)
 
-    # Save victims data to annual files
-    victims.save(data)
+        # Save victims data to annual files
+        victims.save(data)
 
     # -----------------------------------------------------
     # Part 3: Cumulative daily victim totals
