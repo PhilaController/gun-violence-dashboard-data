@@ -34,6 +34,7 @@ jobs:
           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
           source $HOME/.poetry/env
           poetry install
+          git pull origin master
           poetry run gv-dashboard-data daily-update --debug --homicides-only
       - name: Commit files
         continue-on-error: true
@@ -73,6 +74,7 @@ jobs:
           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
           source $HOME/.poetry/env
           poetry install
+          git pull origin master
           poetry run gv-dashboard-data daily-update --debug --shootings-only
       - name: Commit files
         continue-on-error: true
