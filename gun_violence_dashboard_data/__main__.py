@@ -101,20 +101,21 @@ def daily_update(
     # Do all parts
     process_all = not (homicides_only or shootings_only)
 
+    # Initialize meta
+    meta = {}
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     # ------------------------------------------------------
     # Part 1: Homicide count scraped from PPD
     # ------------------------------------------------------
     if process_all or homicides_only:
+
+        # Run the update
         homicide_count = PPDHomicideTotal(debug=debug)
         homicide_count.update()
 
-        # Update meta data
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        meta_path = DATA_DIR / "meta.json"
-
-        # save the download time
-        meta = {"last_updated": now}
-        json.dump(meta, meta_path.open(mode="w"))
+        # Update the meta
+        meta["last_updated_homicides"] = now
 
     # ---------------------------------------------------
     # Part 2: Main shooting victims data file
@@ -132,6 +133,23 @@ def daily_update(
 
         # Save victims data to annual files
         victims.save(data)
+
+        # Update the meta
+        meta["last_updated_shootings"] = now
+
+    # Update meta data
+    meta_path = DATA_DIR / "meta.json"
+    existing_meta = json.load(meta_path.open(mode="r"))
+
+    # Remove old key
+    if "last_updated" in existing_meta:
+        existing_meta.pop("last_updated")
+
+    # Add new info
+    existing_meta.update(meta)
+
+    # Save the download time
+    json.dump(existing_meta, meta_path.open(mode="w"))
 
     # -----------------------------------------------------
     # Part 3: Cumulative daily victim totals
