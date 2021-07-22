@@ -1,4 +1,4 @@
-name: Daily Data Sync
+name: Daily Homicide Data Sync
 
 on:
   schedule:
@@ -36,46 +36,6 @@ jobs:
           poetry install
           git pull origin master
           poetry run gv-dashboard-data daily-update --debug --homicides-only
-      - name: Commit files
-        continue-on-error: true
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add gun_violence_dashboard_data/data/
-          git commit -m "Add daily download changes"
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-  daily-sync-shootings:
-    name: Daily Shootings Data Sync
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: 3.7
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y libspatialindex-dev
-      - name: Conda info
-        shell: bash -l {0}
-        run: conda info
-      - name: Conda list
-        shell: bash -l {0}
-        run: conda list
-      - name: Download files
-        shell: bash -l {0}
-        run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-          source $HOME/.poetry/env
-          poetry install
-          git pull origin master
-          poetry run gv-dashboard-data daily-update --debug --shootings-only
       - name: Commit files
         continue-on-error: true
         run: |
