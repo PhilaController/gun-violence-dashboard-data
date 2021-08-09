@@ -106,7 +106,7 @@ class PPDHomicideTotal:
         # Make sure it's in ascending order by date
         return df.sort_values("date", ascending=True)
 
-    def update(self):
+    def update(self, force=False):
         """Update the local data via scraping the PPD website."""
 
         # Load the database
@@ -116,7 +116,7 @@ class PPDHomicideTotal:
         latest_database_date = database.iloc[-1]["date"]
 
         # Update if we need to
-        if latest_database_date < self.as_of_date:
+        if force or latest_database_date < self.as_of_date:
 
             if self.debug:
                 logger.debug("Parsing PPD website to update YTD homicides")
@@ -143,4 +143,8 @@ class PPDHomicideTotal:
             # Save it
             if self.debug:
                 logger.debug("Updating PPD homicides data file")
-            database.to_csv(self.path, index=False)
+
+            # Drop duplicates and save
+            database.drop_duplicates(subset=["date"], keep="last").to_csv(
+                self.path, index=False
+            )

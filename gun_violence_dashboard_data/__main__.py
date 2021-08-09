@@ -79,8 +79,17 @@ def save_geojson_layers(debug=False):
 @click.option(
     "--shootings-only", is_flag=True, help="Whether to process the shooting data."
 )
+@click.option(
+    "--force-homicide-update",
+    is_flag=True,
+    help="Whether to force the homicide update.",
+)
 def daily_update(
-    debug=False, ignore_checks=False, homicides_only=False, shootings_only=False
+    debug=False,
+    ignore_checks=False,
+    homicides_only=False,
+    shootings_only=False,
+    force_homicide_update=False,
 ):
     """Run the daily pre-processing update.
 
@@ -112,7 +121,7 @@ def daily_update(
 
         # Run the update
         homicide_count = PPDHomicideTotal(debug=debug)
-        homicide_count.update()
+        homicide_count.update(force=force_homicide_update)
 
         # Update the meta
         meta["last_updated_homicides"] = now
