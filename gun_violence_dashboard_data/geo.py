@@ -2,7 +2,33 @@
 
 import esri2gpd
 
-from . import DATA_DIR, EPSG
+from . import EPSG
+
+
+def get_pa_house_districts():
+    """Elementary school catchments in in Philadelphia."""
+
+    return (
+        esri2gpd.get(
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/PA_House_Districts/FeatureServer/0",
+            fields=["district"],
+        )
+        .rename(columns={"district": "house_district"})
+        .to_crs(epsg=EPSG)
+    )
+
+
+def get_school_catchments():
+    """Elementary school catchments in in Philadelphia."""
+
+    return (
+        esri2gpd.get(
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Philadelphia_Elementary_School_Catchments_SY_2019_2020/FeatureServer/0",
+            fields=["name"],
+        )
+        .rename(columns={"name": "school"})
+        .to_crs(epsg=EPSG)
+    )
 
 
 def get_police_districts():

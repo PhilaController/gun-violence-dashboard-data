@@ -115,12 +115,16 @@ class ShootingVictimsData:
                 )
 
             # Add geographic columns
-            df = (
-                df.pipe(_add_geo_info, get_zip_codes().to_crs(df.crs))
-                .pipe(_add_geo_info, get_police_districts().to_crs(df.crs))
-                .pipe(_add_geo_info, get_council_districts().to_crs(df.crs))
-                .pipe(_add_geo_info, get_neighborhoods().to_crs(df.crs))
-            )
+            geo_funcs = [
+                get_zip_codes,
+                get_police_districts,
+                get_council_districts,
+                get_neighborhoods,
+                get_school_catchments,
+                get_pa_house_districts,
+            ]
+            for geo_func in geo_funcs:
+                df = df.pipe(_add_geo_info, geo_func().to_crs(df.crs))
 
             # if geo columns are missing, geometry should be NaN
             df.loc[df["hood"].isnull(), "geometry"] = np.nan
@@ -249,6 +253,8 @@ class ShootingVictimsData:
                     "council",
                     "police",
                     "hood",
+                    "school",
+                    "house_district",
                 ]
             ].to_file(
                 DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON"
