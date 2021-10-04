@@ -21,9 +21,6 @@ class CourtInfoByIncident:
 
     debug: bool = False
 
-    def __post_init__(self):
-        self._init_scraper()
-
     def _init_scraper(self):
 
         # Initialize the driver in headless mode
@@ -72,6 +69,10 @@ class CourtInfoByIncident:
         self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=30, max_sleep=120
     ):
         """Scrape the courts portal."""
+
+        # Initialize if we need to
+        if not hasattr(self, "scraper"):
+            self._init_scraper()
 
         # Load existing courts data
         courts = self.get()
