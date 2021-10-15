@@ -1,6 +1,7 @@
+from importlib.metadata import version
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = version(__package__)
 
 DATA_DIR = Path(__file__).parent.absolute() / "data"
 EPSG = 2272

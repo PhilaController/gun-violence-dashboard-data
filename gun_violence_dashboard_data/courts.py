@@ -1,15 +1,10 @@
 """Scrape court information from the PA's Unified Judicial System portal."""
-import random
-import time
 from dataclasses import dataclass
 
 import numpy as np
 import simplejson as json
 from loguru import logger
 from phl_courts_scraper.portal import UJSPortalScraper
-from selenium import webdriver
-from tryagain import retries
-from webdriver_manager.chrome import ChromeDriverManager
 
 from . import DATA_DIR
 
@@ -21,17 +16,13 @@ class CourtInfoByIncident:
     PA's Unified Judicial System.
     """
 
+    sleep: int = 2
     debug: bool = False
 
-    def _init_scraper(self):
-
-        # Initialize the driver in headless mode
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
-        self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    def __post_init__(self):
 
         # Initialize the scraper
-        self.scraper = UJSPortalScraper(self.driver)
+        self.scraper = UJSPortalScraper(sleep=self.sleep)
 
     @property
     def path(self):
@@ -67,71 +58,19 @@ class CourtInfoByIncident:
             )
         )
 
-    def update(
-        self, shootings, sleep=7, chunk=None, dry_run=False, min_sleep=30, max_sleep=120
-    ):
+    def update(self, shootings, chunk=None, dry_run=False):
         """Scrape the courts portal."""
 
-        # Initialize if we need to
-        if not hasattr(self, "scraper"):
-            self._init_scraper()
+        # Get the incident numbers
+        incident_numbers = shootings["dc_key"].tolist()
 
-        # Load existing courts data
-        courts = self.get()
-        existing_dc_keys = list(courts.keys())
+        # Scrape the results
+        results = self.scraper.scrape_incident_data(incident_numbers)
 
-        # Trim shootings to those without cases
-        N = len(shootings)
-        if self.debug:
-            logger.info(f"Scraping info for {N} shooting incidents")
-
-        # Save new results here
-        new_results = {}
-
-        def cleanup():
-            self.driver.close()
-            logger.info("Retrying...")
-
-        @retries(
-            max_attempts=15,
-            cleanup_hook=cleanup,
-            pre_retry_hook=self._init_scraper,
-            wait=lambda n: min(min_sleep + 2 ** n + random.random(), max_sleep),
-        )
-        def _call(i):
-
-            if self.debug and i % 25 == 0:
-                logger.debug(i)
-            dc_key = shootings.iloc[i]["dc_key"]
-
-            # Some DC keys for OIS are shorter
-            if len(dc_key) == 12:
-
-                # Scrape!
-                scraping_result = self.scraper(dc_key[2:])
-
-                # Save those with new results
-                if scraping_result is not None:
-                    new_results[dc_key] = scraping_result.to_dict()["data"]
-
-                # Sleep!
-                time.sleep(sleep)
-
-        # Loop over shootings and scrape
-        try:
-            for i in range(N):
-                _call(i)
-
-        except Exception as e:
-            logger.info(f"Exception raised: {e}")
-        finally:
-            if self.debug:
-                logger.debug(f"Done scraping: {i+1} DC keys scraped")
-
-            # Save
-            if not dry_run:
-                if chunk is None:
-                    filename = "scraped_courts_data.json"
-                else:
-                    filename = f"scraped_courts_data_{chunk}.json"
-                json.dump(new_results, (DATA_DIR / "raw" / filename).open("w"))
+        # Save
+        if not dry_run:
+            if chunk is None:
+                filename = "scraped_courts_data.json"
+            else:
+                filename = f"scraped_courts_data_{chunk}.json"
+            json.dump(results, (DATA_DIR / "raw" / filename).open("w"))

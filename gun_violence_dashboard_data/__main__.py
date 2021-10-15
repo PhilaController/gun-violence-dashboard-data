@@ -107,6 +107,10 @@ def daily_update(
 
         6. Scrape and save the homicide count from the PPD's website.
     """
+    import warnings
+
+    warnings.filterwarnings("error")
+
     # Do all parts
     process_all = not (homicides_only or shootings_only)
 
@@ -224,8 +228,8 @@ def scrape_courts_portal(nprocs, pid, sleep, debug, sample, dry_run):
         chunk = None
 
     # Scrape courts info
-    courts_data = CourtInfoByIncident(debug=debug)
-    courts_data.update(shootings_chunk, chunk=chunk, sleep=sleep, dry_run=dry_run)
+    courts_data = CourtInfoByIncident(debug=debug, sleep=sleep)
+    courts_data.update(shootings_chunk, chunk=chunk, dry_run=dry_run)
 
 
 @cli.command()
