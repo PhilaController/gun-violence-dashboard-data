@@ -16,8 +16,10 @@ from . import DATA_DIR
 
 @dataclass
 class CourtInfoByIncident:
-    """Court information for shooting incidents scraped from the
-    PA's Unified Judicial System."""
+    """
+    Court information for shooting incidents scraped from the
+    PA's Unified Judicial System.
+    """
 
     debug: bool = False
 
