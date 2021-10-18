@@ -107,10 +107,6 @@ def daily_update(
 
         6. Scrape and save the homicide count from the PPD's website.
     """
-    import warnings
-
-    warnings.filterwarnings("error")
-
     # Do all parts
     process_all = not (homicides_only or shootings_only)
 
