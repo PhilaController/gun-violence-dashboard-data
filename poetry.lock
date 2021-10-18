@@ -319,7 +319,7 @@ python-versions = "*"
 
 [[package]]
 name = "esri2gpd"
-version = "1.0.8"
+version = "1.0.9"
 description = "Scrape features from the ArcGIS Server REST API and return a geopandas GeoDataFrame"
 category = "main"
 optional = false
@@ -1448,8 +1448,8 @@ distlib = [
     {file = "distlib-0.3.3.zip", hash = "sha256:d982d0751ff6eaaab5e2ec8e691d949ee80eddf01a62eaa96ddb11531fe16b05"},
 ]
 esri2gpd = [
-    {file = "esri2gpd-1.0.8-py3-none-any.whl", hash = "sha256:5d5f72d0e13063108b642e2458479a935996c10a3236ddae2325e218549a3b4e"},
-    {file = "esri2gpd-1.0.8.tar.gz", hash = "sha256:29d3b74554dba94d6720fd59af651829c563acede6fb23551a7fd1b70404e7e6"},
+    {file = "esri2gpd-1.0.9-py3-none-any.whl", hash = "sha256:e33ab310e95f55e0ecaf44e7c5d448c7237636c3a83fd2248750de6f1cc19d2e"},
+    {file = "esri2gpd-1.0.9.tar.gz", hash = "sha256:06b0be7c9c0684736502959a01ca5cd1652f4aea9cd427fa7b7b078f4acbb9b7"},
 ]
 filelock = [
     {file = "filelock-3.3.1-py3-none-any.whl", hash = "sha256:2b5eb3589e7fdda14599e7eb1a50e09b4cc14f34ed98b8ba56d33bfaafcbef2f"},
