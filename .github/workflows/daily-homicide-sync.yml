@@ -14,24 +14,17 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/setup-python@v2
         with:
-          auto-update-conda: true
-          python-version: 3.8
+          python-version: "3.8"
+      - name: Run image
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: "1.1.11"
       - name: Install dependencies
+        run: sudo apt-get install -y libspatialindex-dev
+      - name: Run update
         run: |
-          sudo apt-get install -y libspatialindex-dev
-      - name: Conda info
-        shell: bash -l {0}
-        run: conda info
-      - name: Conda list
-        shell: bash -l {0}
-        run: conda list
-      - name: Download files
-        shell: bash -l {0}
-        run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
-          source $HOME/.poetry/env
           poetry install
           git pull origin master
           poetry run gv-dashboard-data daily-update --debug --homicides-only
