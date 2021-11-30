@@ -47,14 +47,7 @@ class CourtInfoByIncident:
         out = data.copy()
         return out.assign(
             has_court_case=lambda df: np.select(
-                [
-                    df.dc_key.astype(float)
-                    .astype(int)
-                    .astype(str)
-                    .isin(existing_dc_keys)
-                ],
-                [True],
-                default=False,
+                [df.dc_key.isin(existing_dc_keys)], [True], default=False
             )
         )
 

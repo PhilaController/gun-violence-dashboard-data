@@ -55,10 +55,18 @@ class ShootingVictimsData:
             if self.debug:
                 logger.debug("Downloading shooting victims database")
 
+            # Raw data
+            df = carto2gpd.get(self.ENDPOINT, self.TABLE_NAME)
+
+            # Dc key
+            valid = df["dc_key"].notnull()
+            df.loc[valid, "dc_key"] = (
+                df.loc[valid, "dc_key"].astype(float).astype(int).astype(str)
+            )
+            df.loc[~valid, "dc_key"] = ""
+
             df = (
-                carto2gpd.get(self.ENDPOINT, self.TABLE_NAME)
-                .assign(
-                    dc_key=lambda df: df.dc_key.astype(float).astype(int).astype(str),
+                df.assign(
                     time=lambda df: df.time.replace("<Null>", np.nan).fillna(
                         "00:00:00"
                     ),
