@@ -205,6 +205,10 @@ def scrape_courts_portal(nprocs, pid, sleep, debug, sample, dry_run):
 
     # Load the shootings data
     shootings = ShootingVictimsData(debug=debug).get(fresh=False)
+
+    # Format dc_key
+    valid = shootings["dc_key"] != ""
+    shootings = shootings.loc[valid]
     shootings["dc_key"] = shootings["dc_key"].astype(float).astype(int).astype(str)
 
     # Drop duplicates
