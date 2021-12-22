@@ -5,7 +5,7 @@ on:
     - cron: "15 2 * * 0"
   push:
     paths:
-      - "./github/workflows/parallel-scrape.yml"
+      - .github/workflows/parallel-scrape.yml
 
 jobs:
   parallel-scrape:
