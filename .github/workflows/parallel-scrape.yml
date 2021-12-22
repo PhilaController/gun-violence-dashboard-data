@@ -1,5 +1,4 @@
 name: Parallel Courts Scraper
-
 on:
   schedule:
     - cron: "15 2 * * 0"
