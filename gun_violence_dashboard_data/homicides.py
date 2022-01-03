@@ -131,7 +131,9 @@ class PPDHomicideTotal:
             # Sanity check on new total
             new_homicide_total = database.iloc[-1]["total"]
             old_homicide_total = database.iloc[-2]["total"]
-            if not force and new_homicide_total < old_homicide_total:
+            new_year = database.iloc[-1]['date'].year
+            old_year = database.iloc[-2]['date'].year
+            if not force and new_homicide_total < old_homicide_total and (new_year==old_year):
                 raise ValueError(
                     f"New YTD homicide total ({new_homicide_total}) is less than previous YTD total ({old_homicide_total})"
                 )
