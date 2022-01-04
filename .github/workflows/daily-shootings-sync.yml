@@ -34,6 +34,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git add -f gun_violence_dashboard_data/data/**/*.json
           git commit -a -m "Add daily download changes"
       - name: Push changes
         uses: ad-m/github-push-action@master
