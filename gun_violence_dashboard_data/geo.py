@@ -1,8 +1,16 @@
 """Load various geographic boundaries in Philadelphia."""
 
 import esri2gpd
+import geopandas as gpd
 
 from . import EPSG
+
+
+def get_city_limits():
+    """Load the city limits."""
+    return gpd.read_file(
+        "https://opendata.arcgis.com/datasets/405ec3da942d4e20869d4e1449a2be48_0.geojson"
+    ).to_crs(epsg=EPSG)
 
 
 def get_pa_house_districts():

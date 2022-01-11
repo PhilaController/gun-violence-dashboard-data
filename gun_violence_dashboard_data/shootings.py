@@ -2,6 +2,7 @@
 
 import datetime
 from dataclasses import dataclass
+from os import supports_fd
 
 import carto2gpd
 import geopandas as gpd
@@ -29,6 +30,64 @@ MONTHS = [
     "Nov",
     "Dec",
 ]
+
+
+def add_geographic_info(df):
+    """Add geographic info."""
+
+    # Check city limits
+    city_limits = get_city_limits().to_crs(df.crs)
+    outside_limits = ~df.geometry.within(city_limits.squeeze().geometry)
+    missing = outside_limits.sum()
+
+    # Set missing geometry to null
+    logger.info(f"{missing} shootings outside city limits")
+    if missing > 0:
+        df.loc[missing, "geometry"] = np.nan
+
+    # Try to replace any missing geometries from criminal incidents
+    dc_key_list = ", ".join(
+        df.loc[df.geometry.isnull(), "dc_key"].apply(lambda x: f"'{x}'")
+    )
+    url = "https://phl.carto.com/api/v2/sql"
+    incidents = carto2gpd.get(
+        url, "incidents_part1_part2", where=f"dc_key IN ( {dc_key_list} )"
+    )
+
+    # Did we get any matches
+    matches = len(incidents)
+    logger.info(f"Found {matches} matches for {missing} missing geometries")
+
+    # Merge
+    if matches > 0:
+
+        missing = df.loc[df.geometry.isnull()]
+        df2 = missing.drop(columns=["geometry"]).merge(
+            incidents[["dc_key", "geometry"]], on="dc_key", how="left"
+        )
+        df = pd.concat([df.loc[~df.geometry.isnull()], df2])
+
+    def _add_geo_info(data, geo):
+        return gpd.sjoin(data, geo, how="left", predicate="within").drop(
+            labels=["index_right"], axis=1
+        )
+
+    # Add geographic columns
+    geo_funcs = [
+        get_zip_codes,
+        get_police_districts,
+        get_council_districts,
+        get_neighborhoods,
+        get_school_catchments,
+        get_pa_house_districts,
+    ]
+    for geo_func in geo_funcs:
+        df = df.pipe(_add_geo_info, geo_func().to_crs(df.crs))
+
+    # if geo columns are missing, geometry should be NaN
+    df.loc[df["hood"].isnull(), "geometry"] = np.nan
+
+    return df
 
 
 @dataclass
@@ -117,25 +176,8 @@ class ShootingVictimsData:
                         "New data seems to have too few rows...please manually confirm new data is correct."
                     )
 
-            def _add_geo_info(data, geo):
-                return gpd.sjoin(data, geo, how="left", op="within").drop(
-                    labels=["index_right"], axis=1
-                )
-
-            # Add geographic columns
-            geo_funcs = [
-                get_zip_codes,
-                get_police_districts,
-                get_council_districts,
-                get_neighborhoods,
-                get_school_catchments,
-                get_pa_house_districts,
-            ]
-            for geo_func in geo_funcs:
-                df = df.pipe(_add_geo_info, geo_func().to_crs(df.crs))
-
-            # if geo columns are missing, geometry should be NaN
-            df.loc[df["hood"].isnull(), "geometry"] = np.nan
+            # Add geographic info
+            df = add_geographic_info(df)
 
             # Save it
             if update_local:
