@@ -49,7 +49,7 @@ def _match_to_streets(data, streets, key, buffer):
 
     # buffer the geometry and do the spatial join
     streets.geometry = streets.geometry.buffer(buffer)
-    df = gpd.sjoin(unique_data, streets, op="within", how="left")
+    df = gpd.sjoin(unique_data, streets, predicate="within", how="left")
 
     # missing vs matched
     missing = df.loc[df["street_name"].isnull()].copy()
@@ -83,9 +83,9 @@ def _match_to_streets(data, streets, key, buffer):
 
     # merge back in to original data frame
     columns = list(set(streets.columns) - {"geometry"})
-    out = pd.merge(data, out[columns + [key]], on=key)
+    out = pd.merge(data, out[columns + [key]], on=key, how="left")
 
-    return out
+    return out.drop_duplicates()  # Drop duplicates
 
 
 @dataclass

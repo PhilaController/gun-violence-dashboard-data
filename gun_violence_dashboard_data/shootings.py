@@ -2,7 +2,6 @@
 
 import datetime
 from dataclasses import dataclass
-from os import supports_fd
 
 import carto2gpd
 import geopandas as gpd
@@ -35,6 +34,12 @@ MONTHS = [
 def add_geographic_info(df):
     """Add geographic info."""
 
+    # Get a fresh copy
+    df = df.copy().reset_index(drop=True)
+
+    # The original length
+    original_length = len(df)
+
     # Check city limits
     city_limits = get_city_limits().to_crs(df.crs)
     outside_limits = ~df.geometry.within(city_limits.squeeze().geometry)
@@ -61,16 +66,25 @@ def add_geographic_info(df):
     # Merge
     if matches > 0:
 
-        missing = df.loc[df.geometry.isnull()]
+        missing_sel = df.geometry.isnull()
+        missing = df.loc[missing_sel]
         df2 = missing.drop(columns=["geometry"]).merge(
-            incidents[["dc_key", "geometry"]], on="dc_key", how="left"
+            incidents[["dc_key", "geometry"]].drop_duplicates(subset=["dc_key"]),
+            on="dc_key",
+            how="left",
         )
-        df = pd.concat([df.loc[~df.geometry.isnull()], df2])
+        df = pd.concat([df.loc[~missing_sel], df2]).reset_index(drop=True)
 
     def _add_geo_info(data, geo):
-        return gpd.sjoin(data, geo, how="left", predicate="within").drop(
-            labels=["index_right"], axis=1
-        )
+        out = gpd.sjoin(data, geo, how="left", predicate="within")
+
+        # NOTE: sometimes this will match multiple geo boundaries
+        # REMOVE THEM
+        duplicated = out.index.duplicated()
+        if duplicated.sum():
+            out = out.loc[~duplicated]
+
+        return out.drop(labels=["index_right"], axis=1)
 
     # Add geographic columns
     geo_funcs = [
@@ -86,6 +100,10 @@ def add_geographic_info(df):
 
     # if geo columns are missing, geometry should be NaN
     df.loc[df["hood"].isnull(), "geometry"] = np.nan
+
+    # Check the length
+    if len(df) != original_length:
+        raise ValueError("Length of data has changed; this shouldn't happen!")
 
     return df
 
@@ -117,13 +135,13 @@ class ShootingVictimsData:
             # Raw data
             df = carto2gpd.get(self.ENDPOINT, self.TABLE_NAME)
 
-            # Dc key
-            valid = df["dc_key"].notnull()
-            df.loc[valid, "dc_key"] = (
-                df.loc[valid, "dc_key"].astype(float).astype(int).astype(str)
-            )
-            df.loc[~valid, "dc_key"] = ""
+            # Verify DC key first
+            missing_dc_keys = df["dc_key"].isnull()
+            if missing_dc_keys.sum() and not self.ignore_checks:
+                n = missing_dc_keys.sum()
+                raise ValueError(f"Found {n} rows with missing DC keys")
 
+            # Format
             df = (
                 df.assign(
                     time=lambda df: df.time.replace("<Null>", np.nan).fillna(
@@ -132,6 +150,7 @@ class ShootingVictimsData:
                     date=lambda df: pd.to_datetime(
                         df.date_.str.slice(0, 10).str.cat(df.time, sep=" ")
                     ),
+                    dc_key=lambda df: df.dc_key.astype(float).astype(int).astype(str),
                     year=lambda df: df.date.dt.year,
                     race=lambda df: df.race.fillna("Other/Unknown"),
                     age=lambda df: df.age.astype(float),
