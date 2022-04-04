@@ -7,7 +7,7 @@ on:
       - .github/workflows/parallel-scrape.yml
 
 jobs:
-  parallel-scrape:
+  parallel-scraper:
     name: Parallel Courts Scraper
     runs-on: ubuntu-latest
     strategy:
