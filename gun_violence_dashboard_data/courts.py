@@ -60,6 +60,7 @@ class CourtInfoByIncident:
 
         # Scrape the results
         results = self.scraper.scrape_portal_data(incident_numbers)
+        results = [val for sublist in results for val in sublist]
 
         # Save
         if not dry_run:
