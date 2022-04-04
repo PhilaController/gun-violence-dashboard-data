@@ -46,7 +46,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   combine-files:
-    needs: parallel-scrape
+    needs: parallel-scraper
     name: Combine Scraping Results
     runs-on: ubuntu-latest
     steps:
