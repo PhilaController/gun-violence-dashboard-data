@@ -58,7 +58,7 @@ class CourtInfoByIncident:
         incident_numbers = shootings["dc_key"].tolist()
 
         # Scrape the results
-        results = self.scraper.scrape_incident_data(incident_numbers)
+        results = self.scraper.scrape_portal_data(incident_numbers)
 
         # Save
         if not dry_run:
