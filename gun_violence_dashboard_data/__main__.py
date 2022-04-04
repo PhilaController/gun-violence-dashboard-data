@@ -244,11 +244,11 @@ def finalize_courts_scraping(debug, dry_run):
     data_path = DATA_DIR / "raw"
     files = data_path.glob("scraped_courts_data_*.json")
 
-    combined = {}
+    combined = []
     for f in sorted(files):
         if debug:
             logger.debug(f"Combining file: '{f}'")
-        combined.update(json.load(f.open("r")))
+        combined += json.load(f.open("r"))
 
     if not dry_run:
         json.dump(combined, (DATA_DIR / "raw" / "scraped_courts_data.json").open("w"))

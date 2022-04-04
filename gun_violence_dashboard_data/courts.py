@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 import simplejson as json
 from loguru import logger
 from phl_courts_scraper.portal import UJSPortalScraper
@@ -32,14 +33,14 @@ class CourtInfoByIncident:
         """Get the shooting victims data, either loading
         the currently downloaded version or a fresh copy."""
 
-        return json.load(self.path.open("r"))
+        return pd.read_json(self.path)
 
     def merge(self, data):
         """Merge courts data."""
 
         # Load raw courts data and existing dc keys
         courts = self.get()
-        existing_dc_keys = [key for key in courts.keys() if len(courts[key])]
+        existing_dc_keys = courts["dc_number"].unique()
 
         if self.debug:
             logger.debug("Merging in court case information")
