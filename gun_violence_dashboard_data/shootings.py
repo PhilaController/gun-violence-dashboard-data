@@ -1,18 +1,55 @@
 """Module for downloading and analyzing the shooting victims database."""
 
 import datetime
+import gzip
+import tempfile
 from dataclasses import dataclass
 
+import boto3
 import carto2gpd
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import simplejson as json
+from dotenv import find_dotenv, load_dotenv
 from loguru import logger
 from shapely.geometry import Point
 
 from . import DATA_DIR, EPSG
 from .geo import *
+
+
+def upload_to_s3(data, filename):
+    """Upload data to a public AWS s3 bucket."""
+
+    # Load the credentials
+    load_dotenv(find_dotenv())
+
+    # Initialize the s3 resource
+    s3 = boto3.client("s3")
+
+    # Compress JSON
+    json_str = data.to_json() + "\n"
+    json_bytes = json_str.encode("utf-8")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpfile = f"{tmpdir}/{filename}"
+        with gzip.open(tmpfile, "w") as fout:
+            fout.write(json_bytes)
+
+        # Upload to s3
+        BUCKET = "gun-violence-dashboard"
+        s3.upload_file(
+            tmpfile,
+            BUCKET,
+            filename,
+            ExtraArgs={
+                "ContentType": "application/json",
+                "ContentEncoding": "gzip",
+                "ACL": "public-read",
+            },
+        )
+
 
 CURRENT_YEAR = datetime.datetime.now().year
 MONTHS = [
@@ -290,6 +327,7 @@ class ShootingVictimsData:
         json.dump(years, (DATA_DIR / "processed" / "data_years.json").open("w"))
 
         # Save each year's data to separate file
+        combined = []
         for year in years:
 
             if self.debug:
@@ -303,7 +341,7 @@ class ShootingVictimsData:
             data_yr["date"] = data_yr["date"].dt.strftime("%Y/%m/%d %H:%M:%S")
 
             # Extract columns and save
-            data_yr[
+            data_yr = data_yr[
                 [
                     "geometry",
                     "dc_key",
@@ -325,6 +363,12 @@ class ShootingVictimsData:
                     "school",
                     "house_district",
                 ]
-            ].to_file(
+            ]
+
+            data_yr.to_file(
                 DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON"
             )
+
+            # Save to s3
+            upload_to_s3(data_yr, f"shootings_{year}.json")
+
