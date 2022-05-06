@@ -10,6 +10,7 @@ import carto2gpd
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import requests
 import simplejson as json
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
@@ -68,6 +69,32 @@ MONTHS = [
 ]
 
 
+def carto2gpd_post(url, table_name, where=None, fields=None):
+    """Query carto API with a post call"""
+
+    # Get the fields
+    if fields is None:
+        fields = "*"
+    else:
+        if "the_geom" not in fields:
+            fields.append("the_geom")
+        fields = ",".join(fields)
+
+    # Build the query
+    query = f"SELECT {fields} FROM {table_name}"
+    if where:
+        query += f" WHERE {where}"
+
+    # Make the request
+    params = dict(q=query, format="geojson", skipfields=["cartodb_id"])
+    r = requests.post(url, data=params)
+
+    if r.status_code == 200:
+        return gpd.GeoDataFrame.from_features(r.json())
+    else:
+        raise ValueError("Error querying carto API")
+
+
 def add_geographic_info(df):
     """Add geographic info."""
 
@@ -85,16 +112,18 @@ def add_geographic_info(df):
     # Set missing geometry to null
     logger.info(f"{missing} shootings outside city limits")
     if missing > 0:
-        df.loc[missing, "geometry"] = np.nan
+        df.loc[outside_limits, "geometry"] = np.nan
 
     # Try to replace any missing geometries from criminal incidents
     dc_key_list = ", ".join(
         df.loc[df.geometry.isnull(), "dc_key"].apply(lambda x: f"'{x}'")
     )
+
+    # Query with a post request
     url = "https://phl.carto.com/api/v2/sql"
-    incidents = carto2gpd.get(
-        url, "incidents_part1_part2", where=f"dc_key IN ( {dc_key_list} )"
-    )
+    table_name = "incidents_part1_part2"
+    where = f"dc_key IN ( {dc_key_list} )"
+    incidents = carto2gpd_post(url, table_name, where=where, fields=["dc_key"])
 
     # Did we get any matches
     matches = len(incidents)
