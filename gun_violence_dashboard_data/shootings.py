@@ -242,6 +242,11 @@ class ShootingVictimsData:
                 .reset_index(drop=True)
             )
 
+            # Add the other category for race/ethnicity
+            main_race_categories = ["H", "W", "B", "A"]
+            sel = df.race.isin(main_race_categories)
+            df.loc[~sel, "race"] = "Other/Unknown"
+
             # CHECKS
             if not self.ignore_checks:
                 old_df = gpd.read_file(self.path)
