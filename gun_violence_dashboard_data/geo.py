@@ -14,7 +14,7 @@ def get_city_limits():
 
 
 def get_pa_house_districts():
-    """Elementary school catchments in in Philadelphia."""
+    """PA House districts in in Philadelphia."""
 
     return (
         esri2gpd.get(
@@ -22,6 +22,19 @@ def get_pa_house_districts():
             fields=["district"],
         )
         .rename(columns={"district": "house_district"})
+        .to_crs(epsg=EPSG)
+    )
+
+
+def get_pa_senate_districts():
+    """PA Senate districts in in Philadelphia."""
+
+    return (
+        esri2gpd.get(
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/PA_Senate_Districts/FeatureServer/0",
+            fields=["district"],
+        )
+        .rename(columns={"district": "senate_district"})
         .to_crs(epsg=EPSG)
     )
 

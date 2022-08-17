@@ -160,6 +160,7 @@ def add_geographic_info(df):
         get_neighborhoods,
         get_school_catchments,
         get_pa_house_districts,
+        get_pa_senate_districts,
     ]
     for geo_func in geo_funcs:
         df = df.pipe(_add_geo_info, geo_func().to_crs(df.crs))
@@ -396,6 +397,7 @@ class ShootingVictimsData:
                     "hood",
                     "school",
                     "house_district",
+                    "senate_district",
                 ]
             ]
 
