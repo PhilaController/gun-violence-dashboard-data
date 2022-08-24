@@ -26,6 +26,7 @@ tryagain = "^1.0"
 boto3 = "^1.21.16"
 python-dotenv = "^0.19.2"
 cloudscraper = "^1.2.60"
+lxml = "^4.9.1"
 
 
 [tool.poetry.dev-dependencies]

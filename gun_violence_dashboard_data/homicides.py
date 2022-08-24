@@ -33,7 +33,7 @@ class PPDHomicideTotal:
     def __post_init__(self):
         scraper = cloudscraper.create_scraper()
         self.soup = BeautifulSoup(scraper.get(self.URL).content, "lxml")
-
+        
     @cached_property
     def years(self):
         """The years available on the page. Starts with 2007."""
