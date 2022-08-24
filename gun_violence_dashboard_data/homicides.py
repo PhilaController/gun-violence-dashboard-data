@@ -3,8 +3,8 @@ Crime Stats website."""
 
 from dataclasses import dataclass
 
+import cloudscraper
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
 from cached_property import cached_property
 from loguru import logger
@@ -31,7 +31,8 @@ class PPDHomicideTotal:
     URL = "https://www.phillypolice.com/crime-maps-stats/"
 
     def __post_init__(self):
-        self.soup = BeautifulSoup(requests.get(self.URL).content, "html.parser")
+        scraper = cloudscraper.create_scraper()
+        self.soup = BeautifulSoup(scraper.get(self.URL).content, "lxml")
 
     @cached_property
     def years(self):

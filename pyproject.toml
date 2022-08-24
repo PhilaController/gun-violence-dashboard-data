@@ -18,13 +18,14 @@ rtree = "*"
 requests = "*"
 bs4 = "*"
 cached-property = "*"
-phl-courts-scraper = {git = "https://github.com/PhiladelphiaController/phl-courts-scraper", branch = "master"}
+phl-courts-scraper = {git = "https://github.com/PhilaController/phl-courts-scraper", branch = "master"}
 webdriver-manager = "*"
 esri2gpd = "*"
 xlrd = "*"
 tryagain = "^1.0"
 boto3 = "^1.21.16"
 python-dotenv = "^0.19.2"
+cloudscraper = "^1.2.60"
 
 
 [tool.poetry.dev-dependencies]
