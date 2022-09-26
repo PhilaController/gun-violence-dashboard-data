@@ -20,9 +20,9 @@ def _as_string(x):
 def get_largest_contiguous_line(x):
     multi = ops.linemerge(MultiLineString(x.tolist()))
     if isinstance(multi, MultiLineString):
-        lengths = [line.length for line in multi]
+        lengths = [line.length for line in multi.geoms]
         idx = np.argmax(lengths)
-        return multi[idx]
+        return multi.geoms[idx]
     else:
         return multi
 

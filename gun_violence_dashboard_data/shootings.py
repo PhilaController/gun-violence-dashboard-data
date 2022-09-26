@@ -274,7 +274,7 @@ class ShootingVictimsData:
             if update_local:
                 if self.debug:
                     logger.debug("Updating saved copy of shooting victims database")
-                df.to_file(self.path, driver="GeoJSON")
+                df.to_file(self.path, driver="GeoJSON", index=False)
 
         # Load from disk, fill missing geometries and convert CRS
         out = (
@@ -402,7 +402,7 @@ class ShootingVictimsData:
             ]
 
             data_yr.to_file(
-                DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON"
+                DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON", index=False
             )
 
             # Save to s3
