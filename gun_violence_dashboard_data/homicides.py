@@ -2,6 +2,7 @@
 Crime Stats website."""
 
 from dataclasses import dataclass
+from datetime import date
 
 import cloudscraper
 import pandas as pd
@@ -33,7 +34,7 @@ class PPDHomicideTotal:
     def __post_init__(self):
         scraper = cloudscraper.create_scraper()
         self.soup = BeautifulSoup(scraper.get(self.URL).content, "lxml")
-        
+
     @cached_property
     def years(self):
         """The years available on the page. Starts with 2007."""
@@ -107,8 +108,26 @@ class PPDHomicideTotal:
         # Make sure it's in ascending order by date
         return df.sort_values("date", ascending=True)
 
+    def _get_years_from_ytd_section(self):
+        return [
+            int(th.text)
+            for th in self.soup.select("#homicide-stats")[1]
+            .select_one("tr")
+            .select("th")[1:]
+        ]
+
     def update(self, force=False):
         """Update the local data via scraping the PPD website."""
+
+        # Check for new year's
+        ytd_years = self._get_years_from_ytd_section()
+        max_ytd_year = max(ytd_years)
+
+        thisYear = date.today().year
+        if thisYear != max_ytd_year - 1:
+            raise ValueError(
+                f"It seems like we are in a new year {thisYear} but the homicide page hasn't been updated yet"
+            )
 
         # Load the database
         database = self.get()
@@ -132,9 +151,13 @@ class PPDHomicideTotal:
             # Sanity check on new total
             new_homicide_total = database.iloc[-1]["total"]
             old_homicide_total = database.iloc[-2]["total"]
-            new_year = database.iloc[-1]['date'].year
-            old_year = database.iloc[-2]['date'].year
-            if not force and new_homicide_total < old_homicide_total and (new_year==old_year):
+            new_year = database.iloc[-1]["date"].year
+            old_year = database.iloc[-2]["date"].year
+            if (
+                not force
+                and new_homicide_total < old_homicide_total
+                and (new_year == old_year)
+            ):
                 raise ValueError(
                     f"New YTD homicide total ({new_homicide_total}) is less than previous YTD total ({old_homicide_total})"
                 )
