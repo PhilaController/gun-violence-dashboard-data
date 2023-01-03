@@ -108,7 +108,7 @@ class PPDHomicideTotal:
         # Make sure it's in ascending order by date
         return df.sort_values("date", ascending=True)
 
-    def _get_years_from_ytd_section(self):
+    def _get_years_from_year_end_section(self):
         return [
             int(th.text)
             for th in self.soup.select("#homicide-stats")[1]
@@ -120,11 +120,11 @@ class PPDHomicideTotal:
         """Update the local data via scraping the PPD website."""
 
         # Check for new year's
-        ytd_years = self._get_years_from_ytd_section()
-        max_ytd_year = max(ytd_years)
+        year_end_years = self._get_years_from_year_end_section()
+        max_year_end_year = max(year_end_years)
 
         thisYear = date.today().year
-        if thisYear != max_ytd_year - 1:
+        if thisYear != max_year_end_year + 1:
             raise ValueError(
                 f"It seems like we are in a new year {thisYear} but the homicide page hasn't been updated yet"
             )
