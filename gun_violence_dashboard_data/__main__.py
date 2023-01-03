@@ -10,7 +10,7 @@ from . import DATA_DIR
 from .courts import CourtInfoByIncident
 from .geo import *
 from .homicides import PPDHomicideTotal
-from .shootings import ShootingVictimsData
+from .shootings import ShootingVictimsData, load_existing_shootings_data
 from .streets import StreetHotSpots
 
 
@@ -131,14 +131,7 @@ def daily_update(
     # ---------------------------------------------------
     if process_all or shootings_only:
         victims = ShootingVictimsData(debug=debug, ignore_checks=ignore_checks)
-        data = victims.get(fresh=True, update_local=True)
-
-        # Value-added info for hot spots and court info
-        hotspots = StreetHotSpots(debug=debug)
-        courts = CourtInfoByIncident(debug=debug)
-
-        # Merge in the value-added info
-        data = data.pipe(hotspots.merge).pipe(courts.merge)
+        data = victims.get()
 
         # Save victims data to annual files
         victims.save(data)
@@ -159,11 +152,6 @@ def daily_update(
 
     # Save the download time
     json.dump(existing_meta, meta_path.open(mode="w"))
-
-    # -----------------------------------------------------
-    # Part 3: Cumulative daily victim totals
-    # -----------------------------------------------------
-    # victims.save_cumulative_totals(data, update_local=True)
 
 
 @cli.command()
@@ -202,12 +190,8 @@ def scrape_courts_portal(nprocs, pid, sleep, debug, sample, dry_run):
     This can be run in parallel by specifying a total
     number of processes and a specific chunk to run.
     """
-
-    # Load the shootings data
-    shootings = ShootingVictimsData(debug=debug).get(fresh=False)
-
-    # Double check: Format dc_key
-    shootings["dc_key"] = shootings["dc_key"].astype(float).astype(int).astype(str)
+    # Load the existing data
+    shootings = load_existing_shootings_data()
 
     # Drop duplicates
     shootings = shootings.drop_duplicates(subset=["dc_key"])

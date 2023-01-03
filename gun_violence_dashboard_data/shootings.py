@@ -1,9 +1,9 @@
 """Module for downloading and analyzing the shooting victims database."""
 
-import datetime
 import gzip
 import tempfile
 from dataclasses import dataclass
+from typing import Literal, Optional
 
 import boto3
 import carto2gpd
@@ -14,10 +14,14 @@ import requests
 import simplejson as json
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
+from pydantic import BaseModel, validator
 from shapely.geometry import Point
 
 from . import DATA_DIR, EPSG
+from .courts import CourtInfoByIncident
 from .geo import *
+from .streets import StreetHotSpots
+from .utils import validate_data_schema
 
 
 def upload_to_s3(data, filename):
@@ -52,23 +56,6 @@ def upload_to_s3(data, filename):
         )
 
 
-CURRENT_YEAR = datetime.datetime.now().year
-MONTHS = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-]
-
-
 def carto2gpd_post(url, table_name, where=None, fields=None):
     """Query carto API with a post call"""
 
@@ -90,7 +77,7 @@ def carto2gpd_post(url, table_name, where=None, fields=None):
     r = requests.post(url, data=params)
 
     if r.status_code == 200:
-        return gpd.GeoDataFrame.from_features(r.json())
+        return gpd.GeoDataFrame.from_features(r.json(), crs="EPSG:4326")
     else:
         raise ValueError("Error querying carto API")
 
@@ -166,14 +153,61 @@ def add_geographic_info(df):
     for geo_func in geo_funcs:
         df = df.pipe(_add_geo_info, geo_func().to_crs(df.crs))
 
-    # if geo columns are missing, geometry should be NaN
-    df.loc[df["hood"].isnull(), "geometry"] = np.nan
+    # if geo columns are missing, geometry should be empty point
+    df.loc[df["neighborhood"].isnull(), "geometry"] = np.nan
 
     # Check the length
     if len(df) != original_length:
         raise ValueError("Length of data has changed; this shouldn't happen!")
 
     return df
+
+
+def load_existing_shootings_data():
+    """Load existing shootings data."""
+    files = sorted((DATA_DIR / "processed").glob("shootings_20*.json"))
+    return pd.concat([gpd.read_file(f) for f in files])
+
+
+class ShootingVictimsSchema(BaseModel):
+    """Schema for the shooting victims dataset."""
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    geometry: Point
+    dc_key: str
+    race: Literal["B", "H", "W", "A", "Other/Unknown"]
+    sex: Literal["M", "F"]
+    fatal: Literal[True, False]
+    date: str
+    age_group: Literal[
+        "18 to 30", "Younger than 18", "31 to 45", "Older than 45", "Unknown"
+    ]
+    has_court_case: Literal[True, False]
+
+    # Not all ages are known
+    age: Optional[float] = None
+
+    # Optional geographic add-ons
+    street_name: Optional[str] = None
+    block_number: Optional[float] = None
+    segment_id: Optional[str] = None
+    zip_code: Optional[str] = None
+    council_district: Optional[str] = None
+    police_district: Optional[str] = None
+    neighborhood: Optional[str] = None
+    school_name: Optional[str] = None
+    house_district: Optional[str] = None
+    senate_district: Optional[str] = None
+
+    @validator("dc_key")
+    def verify_dc_key(cls, v):
+        if not isinstance(v, str):
+            assert not np.isnan(v), "cannot be NaN"
+        else:
+            assert not v.endswith(".0"), "bad string formatting"
+        return v
 
 
 @dataclass
@@ -184,223 +218,130 @@ class ShootingVictimsData:
     debug: bool = False
     ignore_checks: bool = False
 
-    ENDPOINT = "https://phl.carto.com/api/v2/sql"
-    TABLE_NAME = "shootings"
+    ENDPOINT: str = "https://phl.carto.com/api/v2/sql"
+    TABLE_NAME: str = "shootings"
 
-    @property
-    def path(self):
-        return DATA_DIR / "raw" / "shootings.json"
+    @validate_data_schema(ShootingVictimsSchema)
+    def get(self) -> gpd.GeoDataFrame:
+        """Download and return the formatted data."""
 
-    def get(self, fresh=False, update_local=True):
-        """Get the shooting victims data, either loading
-        the currently downloaded version or a fresh copy."""
+        if self.debug:
+            logger.debug("Downloading shooting victims database")
 
-        if fresh or not self.path.exists():
+        # Raw data from carto
+        df = carto2gpd.get(self.ENDPOINT, self.TABLE_NAME)
 
-            if self.debug:
-                logger.debug("Downloading shooting victims database")
+        # Verify DC key first
+        missing_dc_keys = df["dc_key"].isnull()
+        if missing_dc_keys.sum() and not self.ignore_checks:
+            n = missing_dc_keys.sum()
+            raise ValueError(f"Found {n} rows with missing DC keys")
 
-            # Raw data
-            df = carto2gpd.get(self.ENDPOINT, self.TABLE_NAME)
-
-            # Verify DC key first
-            missing_dc_keys = df["dc_key"].isnull()
-            if missing_dc_keys.sum() and not self.ignore_checks:
-                n = missing_dc_keys.sum()
-                raise ValueError(f"Found {n} rows with missing DC keys")
-
-            # Format
-            df = (
-                df.assign(
-                    time=lambda df: df.time.replace("<Null>", np.nan).fillna(
-                        "00:00:00"
-                    ),
-                    date=lambda df: pd.to_datetime(
-                        df.date_.str.slice(0, 10).str.cat(df.time, sep=" ")
-                    ),
-                    dc_key=lambda df: df.dc_key.astype(float).astype(int).astype(str),
-                    year=lambda df: df.date.dt.year,
-                    race=lambda df: df.race.fillna("Other/Unknown"),
-                    age=lambda df: df.age.astype(float),
-                    age_group=lambda df: np.select(
-                        [
-                            df.age <= 17,
-                            (df.age > 17) & (df.age <= 30),
-                            (df.age > 30) & (df.age <= 45),
-                            (df.age > 45),
-                        ],
-                        ["Younger than 18", "18 to 30", "31 to 45", "Older than 45"],
-                        default="Unknown",
-                    ),
-                )
-                .assign(
-                    race=lambda df: df.race.where(df.latino != 1, other="H"),
-                    age=lambda df: df.age.fillna("Unknown"),
-                )
-                .drop(
-                    labels=["point_x", "point_y", "date_", "time", "objectid"], axis=1
-                )
-                .sort_values("date", ascending=False)
-                .reset_index(drop=True)
+        # Format
+        df = (
+            df.assign(
+                time=lambda df: df.time.replace("<Null>", np.nan).fillna("00:00:00"),
+                date=lambda df: pd.to_datetime(
+                    df.date_.str.slice(0, 10).str.cat(df.time, sep=" ")
+                ),
+                dc_key=lambda df: df.dc_key.astype(float).astype(int).astype(str),
+                year=lambda df: df.date.dt.year,
+                race=lambda df: df.race.fillna("Other/Unknown"),
+                age=lambda df: df.age.astype(float),
+                age_group=lambda df: np.select(
+                    [
+                        df.age <= 17,
+                        (df.age > 17) & (df.age <= 30),
+                        (df.age > 30) & (df.age <= 45),
+                        (df.age > 45),
+                    ],
+                    ["Younger than 18", "18 to 30", "31 to 45", "Older than 45"],
+                    default="Unknown",
+                ),
+                fatal=lambda df: df.fatal.apply(lambda x: True if x == 1 else False),
             )
-
-            # Add the other category for race/ethnicity
-            main_race_categories = ["H", "W", "B", "A"]
-            sel = df.race.isin(main_race_categories)
-            df.loc[~sel, "race"] = "Other/Unknown"
-
-            # CHECKS
-            if not self.ignore_checks:
-                old_df = gpd.read_file(self.path)
-                TOLERANCE = 100
-                if len(df) - len(old_df) > TOLERANCE:
-                    logger.info(f"Length of new data: {len(df)}")
-                    logger.info(f"Length of old data: {len(old_df)}")
-                    raise ValueError(
-                        "New data seems to have too many rows...please manually confirm new data is correct."
-                    )
-
-                TOLERANCE = 10
-                if len(old_df) - len(df) > TOLERANCE:
-                    logger.info(f"Length of new data: {len(df)}")
-                    logger.info(f"Length of old data: {len(old_df)}")
-                    raise ValueError(
-                        "New data seems to have too few rows...please manually confirm new data is correct."
-                    )
-
-            # Add geographic info
-            df = add_geographic_info(df)
-
-            # Save it
-            if update_local:
-                if self.debug:
-                    logger.debug("Updating saved copy of shooting victims database")
-                df.to_file(self.path, driver="GeoJSON", index=False)
-
-        # Load from disk, fill missing geometries and convert CRS
-        out = (
-            gpd.read_file(self.path, dtype={"dc_key": str})
             .assign(
-                geometry=lambda df: df.geometry.fillna(Point()),
-                date=lambda df: pd.to_datetime(df.date),
+                race=lambda df: df.race.where(df.latino != 1, other="H"),
             )
+            .drop(labels=["point_x", "point_y", "date_", "time", "objectid"], axis=1)
+            .sort_values("date", ascending=False)
+            .reset_index(drop=True)
+            .assign(
+                date=lambda df: df.date.dt.strftime("%Y/%m/%d %H:%M:%S")
+            )  # Convert date back to string
             .to_crs(epsg=EPSG)
         )
 
-        # Check dc_key is properly formatted
-        assert (
-            out["dc_key"].str.contains(".0", regex=False).sum() == 0
-        ), "dc_key not properly formatted"
+        # Add the other category for race/ethnicity
+        main_race_categories = ["H", "W", "B", "A"]
+        sel = df.race.isin(main_race_categories)
+        df.loc[~sel, "race"] = "Other/Unknown"
 
-        return out
+        # CHECKS
+        if not self.ignore_checks:
+            old_df = load_existing_shootings_data()
+            TOLERANCE = 100
 
-    def save_cumulative_totals(self, data, update_local=True):
-        """Calculate the cumulative daily total."""
+            # Check for too many rows
+            if len(df) - len(old_df) > TOLERANCE:
+                logger.info(f"Length of new data: {len(df)}")
+                logger.info(f"Length of old data: {len(old_df)}")
+                raise ValueError(
+                    "New data seems to have too many rows...please manually confirm new data is correct."
+                )
 
-        # Loop over each year of data
-        daily = []
-        for year in sorted(data["year"].unique()):
+            # Check for too few rows
+            TOLERANCE = 10
+            if len(old_df) - len(df) > TOLERANCE:
+                logger.info(f"Length of new data: {len(df)}")
+                logger.info(f"Length of old data: {len(old_df)}")
+                raise ValueError(
+                    "New data seems to have too few rows...please manually confirm new data is correct."
+                )
 
-            # Group by day
-            N = (
-                data.query(f"year == {year}")
-                .set_index("date")
-                .groupby(pd.Grouper(freq="D"))
-                .size()
-            )
+        # Add geographic info
+        df = add_geographic_info(df)
 
-            # Reindex
-            N = N.reindex(pd.date_range(f"{year}-01-01", f"{year}-12-31")).rename(
-                str(year)
-            )
-            N.index = N.index.strftime("%m %d")
+        # Handle NaN/None
+        df = df.assign(
+            geometry=lambda df: df.geometry.fillna(Point()),
+        )
 
-            daily.append(N)
+        # Value-added info for hot spots and court info
+        hotspots = StreetHotSpots(debug=self.debug)
+        courts = CourtInfoByIncident(debug=self.debug)
+        df = (
+            df.pipe(hotspots.merge)
+            .pipe(courts.merge)
+            .assign(segment_id=lambda df: df.segment_id.replace("", np.nan))
+        )
 
-        # Finish daily cumulative calculation
-        daily = pd.concat(daily, axis=1).sort_index()
+        # Trim to the schema fields
+        fields = ShootingVictimsSchema.__fields__.keys()
+        df = df[fields]
 
-        # Figure max day in current year
-        cut = daily.index[daily[str(CURRENT_YEAR)].isnull()].min()
-
-        # Fillna and do the cum sum
-        daily = daily.fillna(0).cumsum()
-
-        # Current year back to NaNs
-        daily.loc[cut:, str(CURRENT_YEAR)] = None
-
-        # Re-index to account for leap years
-        new_index = []
-        for v in daily.index:
-            fields = v.split()
-            new_index.append(f"{MONTHS[int(fields[0])-1]} {fields[1]}")
-        daily.index = new_index
-
-        # Convert to a dict
-        out = {}
-        for col in daily:
-            out[col] = daily[col].tolist()
-        out["date"] = daily.index.tolist()
-
-        # Save?
-        if update_local:
-            if self.debug:
-                logger.debug(f"Saving cumulative daily shooting counts as a JSON file")
-            json.dump(
-                out,
-                open(DATA_DIR / "processed" / f"shootings_cumulative_daily.json", "w"),
-                ignore_nan=True,
-            )
-
-        return out
+        return df
 
     def save(self, data):
         """Save annual, processed data files."""
 
-        # years
-        years = sorted(data["year"].astype(int).unique())
-        years = [int(yr) for yr in reversed(years)]
-        json.dump(years, (DATA_DIR / "processed" / "data_years.json").open("w"))
+        # Get the years from the date
+        years = pd.to_datetime(data["date"]).dt.year
+
+        # Get unique years
+        # IMPORTANT: this must be int so it is JSON serializable
+        unique_years = [int(year) for year in sorted(np.unique(years), reverse=True)]
+        json.dump(unique_years, (DATA_DIR / "processed" / "data_years.json").open("w"))
 
         # Save each year's data to separate file
-        combined = []
-        for year in years:
+        for year in unique_years:
 
             if self.debug:
                 logger.debug(f"Saving {year} shootings as a GeoJSON file")
 
             # Get data for this year
             # Save in EPSG = 4326
-            data_yr = data.query(f"year == {year}").to_crs(epsg=4326)
-
-            # Convert the date column
-            data_yr["date"] = data_yr["date"].dt.strftime("%Y/%m/%d %H:%M:%S")
-
-            # Extract columns and save
-            data_yr = data_yr[
-                [
-                    "geometry",
-                    "dc_key",
-                    "race",
-                    "sex",
-                    "age",
-                    "latino",
-                    "fatal",
-                    "date",
-                    "age_group",
-                    "segment_id",
-                    "block_number",
-                    "street_name",
-                    "has_court_case",
-                    "zip",
-                    "council",
-                    "police",
-                    "hood",
-                    "school",
-                    "house_district",
-                    "senate_district",
-                ]
-            ]
+            data_yr = data.loc[years == year].to_crs(epsg=4326)
 
             data_yr.to_file(
                 DATA_DIR / "processed" / f"shootings_{year}.json",
@@ -409,4 +350,4 @@ class ShootingVictimsData:
             )
 
             # Save to s3
-            upload_to_s3(data_yr, f"shootings_{year}.json")
+            upload_to_s3(data_yr, f"shootings_test_{year}.json")

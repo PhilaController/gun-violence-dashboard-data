@@ -28,10 +28,11 @@ python-dotenv = "^0.19.2"
 cloudscraper = "^1.2.60"
 lxml = "^4.9.1"
 urllib3 = "<2"
+pydantic = "^1.10.2"
 
 
 [tool.poetry.dev-dependencies]
-black = "==19.3b0"
+black = ">=22.3.0"
 flake8 = "*"
 isort = "*"
 mypy = "*"
