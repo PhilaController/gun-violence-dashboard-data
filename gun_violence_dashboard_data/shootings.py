@@ -124,6 +124,7 @@ def add_geographic_info(df):
     table_name = "incidents_part1_part2"
     where = f"dc_key IN ( {dc_key_list} )"
     incidents = carto2gpd_post(url, table_name, where=where, fields=["dc_key"])
+    incidents["dc_key"] = incidents["dc_key"].astype(str)
 
     # Did we get any matches
     matches = len(incidents)
@@ -402,9 +403,10 @@ class ShootingVictimsData:
             ]
 
             data_yr.to_file(
-                DATA_DIR / "processed" / f"shootings_{year}.json", driver="GeoJSON", index=False
+                DATA_DIR / "processed" / f"shootings_{year}.json",
+                driver="GeoJSON",
+                index=False,
             )
 
             # Save to s3
             upload_to_s3(data_yr, f"shootings_{year}.json")
-
