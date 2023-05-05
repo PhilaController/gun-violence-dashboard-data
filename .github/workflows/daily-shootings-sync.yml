@@ -5,6 +5,9 @@ on:
     - cron: "30 11 * * 1-5"
     - cron: "30 15 * * 1-5"
     - cron: "30 17 * * 1-5"
+  push:
+    paths:
+      - .github/workflows/daily-shootings-sync.yml
 
 jobs:
   daily-sync-shootings:
