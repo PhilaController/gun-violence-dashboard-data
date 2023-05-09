@@ -105,7 +105,7 @@ def add_geographic_info(df):
     dc_key_list = ", ".join(
         df.loc[df.geometry.isnull(), "dc_key"].apply(lambda x: f"'{x}'")
     )
-
+ 
     # Query with a post request
     url = "https://phl.carto.com/api/v2/sql"
     table_name = "incidents_part1_part2"
@@ -350,4 +350,4 @@ class ShootingVictimsData:
             )
 
             # Save to s3
-            upload_to_s3(data_yr, f"shootings_test_{year}.json")
+            upload_to_s3(data_yr, f"shootings_{year}.json")

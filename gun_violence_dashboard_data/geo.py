@@ -22,10 +22,9 @@ def get_pa_house_districts():
 
     return (
         esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/PA_House_Districts/FeatureServer/0",
-            fields=["district"],
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_PA_House_Districts/FeatureServer/0",
+            fields=["house_district"],
         )
-        .rename(columns={"district": "house_district"})
         .assign(house_district=lambda df: df.house_district.apply(number_to_string))
         .to_crs(epsg=EPSG)
     )
@@ -36,10 +35,9 @@ def get_pa_senate_districts():
 
     return (
         esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/PA_Senate_Districts/FeatureServer/0",
-            fields=["district"],
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_PA_Senate_Districts/FeatureServer/0",
+            fields=["senate_district"],
         )
-        .rename(columns={"district": "senate_district"})
         .assign(senate_district=lambda df: df.senate_district.apply(number_to_string))
         .to_crs(epsg=EPSG)
     )
@@ -50,10 +48,9 @@ def get_school_catchments():
 
     return (
         esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Philadelphia_Elementary_School_Catchments_SY_2019_2020/FeatureServer/0",
-            fields=["name"],
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_School_Catchments/FeatureServer/0",
+            fields=["school_name"],
         )
-        .rename(columns={"name": "school_name"})
         .to_crs(epsg=EPSG)
     )
 
@@ -63,11 +60,10 @@ def get_police_districts():
 
     return (
         esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Boundaries_District/FeatureServer/0",
-            fields=["DIST_NUM"],
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_Police_Districts/FeatureServer/0",
+            fields=["police_district"],
         )
         .to_crs(epsg=EPSG)
-        .rename(columns={"DIST_NUM": "police_district"})
         .assign(police_district=lambda df: df.police_district.apply(number_to_string))
     )
 
@@ -77,11 +73,10 @@ def get_zip_codes():
 
     return (
         esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Philadelphia_ZCTA_2018/FeatureServer/0",
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_ZIP_Codes/FeatureServer/0",
             fields=["zip_code"],
         )
         .to_crs(epsg=EPSG)
-        .rename(columns={"zip_code": "zip_code"})
         .assign(zip_code=lambda df: df.zip_code.apply(number_to_string))
     )
 
@@ -91,10 +86,9 @@ def get_council_districts():
 
     return (
         esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Council_Districts_2016/FeatureServer/0/",
-            fields=["DISTRICT"],
+            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_Council_Districts/FeatureServer/0/",
+            fields=["council_district"],
         )
-        .rename(columns={"DISTRICT": "council_district"})
         .assign(council_district=lambda df: df.council_district.apply(number_to_string))
         .to_crs(epsg=EPSG)
     )
@@ -104,6 +98,6 @@ def get_neighborhoods():
     """Neighborhoods in Philadelphia."""
 
     return esri2gpd.get(
-        "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Philly_NTAs/FeatureServer/0",
+        "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_Neighborhoods/FeatureServer/0",
         fields=["neighborhood"],
     ).to_crs(epsg=EPSG)
