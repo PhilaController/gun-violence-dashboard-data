@@ -110,7 +110,7 @@ def add_geographic_info(df):
     url = "https://phl.carto.com/api/v2/sql"
     table_name = "incidents_part1_part2"
     where = f"dc_key IN ( {dc_key_list} )"
-    incidents = carto2gpd_post(url, table_name, where=where, fields=["dc_key"])
+    incidents = carto2gpd_post(url, table_name, where=where, fields=["dc_key"]).to_crs(df.crs)
     incidents["dc_key"] = incidents["dc_key"].astype(str)
 
     # Did we get any matches

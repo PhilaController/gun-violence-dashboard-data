@@ -35,37 +35,28 @@ def save_geojson_layers(debug=False):
     hotspots = StreetHotSpots(debug=debug)
     hotspots.save()
 
-    # ------------------------------------------------
-    # Part 2: Police Districts
-    # -------------------------------------------------
-    if debug:
-        logger.debug("Saving police districts as a GeoJSON file")
-    path = DATA_DIR / "processed" / "geo" / "police_districts.geojson"
-    get_police_districts().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
+    # Functions
+    geo_funcs = [
+        get_zip_codes,
+        get_police_districts,
+        get_council_districts,
+        get_neighborhoods,
+        get_school_catchments,
+        get_pa_house_districts,
+        get_pa_senate_districts,
+    ]
 
-    # ------------------------------------------------
-    # Part 3: Council Districts
-    # -------------------------------------------------
-    if debug:
-        logger.debug("Saving council districts as a GeoJSON file")
-    path = DATA_DIR / "processed" / "geo" / "council_districts.geojson"
-    get_council_districts().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
+    for func in geo_funcs:
 
-    # ------------------------------------------------
-    # Part 4: ZIP Codes
-    # -------------------------------------------------
-    if debug:
-        logger.debug("Saving zip codes as a GeoJSON file")
-    path = DATA_DIR / "processed" / "geo" / "zip_codes.geojson"
-    get_zip_codes().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
+        tag = func.__name__.split("get_")[-1]
+        filename = f"{tag}.geojson"
+        path = DATA_DIR / "processed" / "geo" / filename
 
-    # ------------------------------------------------
-    # Part 5: Neighborhoods
-    # -------------------------------------------------
-    if debug:
-        logger.debug("Saving neighborhoods as a GeoJSON file")
-    path = DATA_DIR / "processed" / "geo" / "neighborhoods.geojson"
-    get_neighborhoods().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
+        if debug:
+            logger.debug(f"Saving {filename}")
+
+        func().to_crs(epsg=4326).to_file(path, driver="GeoJSON")
+
 
 
 @cli.command()
