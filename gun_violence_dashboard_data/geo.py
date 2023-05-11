@@ -3,7 +3,7 @@
 import esri2gpd
 import geopandas as gpd
 
-from . import EPSG
+from . import DATA_DIR, EPSG
 
 
 def number_to_string(value):
@@ -12,9 +12,9 @@ def number_to_string(value):
 
 def get_city_limits():
     """Load the city limits."""
-    return gpd.read_file(
-        "https://opendata.arcgis.com/datasets/405ec3da942d4e20869d4e1449a2be48_0.geojson"
-    ).to_crs(epsg=EPSG)
+
+    path = DATA_DIR / "raw" / "City_Limits.geojson"
+    return gpd.read_file(path).to_crs(epsg=EPSG)
 
 
 def get_pa_house_districts():
@@ -46,13 +46,10 @@ def get_pa_senate_districts():
 def get_school_catchments():
     """Elementary school catchments in in Philadelphia."""
 
-    return (
-        esri2gpd.get(
-            "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_School_Catchments/FeatureServer/0",
-            fields=["school_name"],
-        )
-        .to_crs(epsg=EPSG)
-    )
+    return esri2gpd.get(
+        "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Gun_Violence_Dashboard_School_Catchments/FeatureServer/0",
+        fields=["school_name"],
+    ).to_crs(epsg=EPSG)
 
 
 def get_police_districts():
