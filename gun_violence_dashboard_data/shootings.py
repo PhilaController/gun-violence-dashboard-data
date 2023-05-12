@@ -14,7 +14,7 @@ import requests
 import simplejson as json
 from dotenv import find_dotenv, load_dotenv
 from loguru import logger
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 from shapely.geometry import Point
 
 from . import DATA_DIR, EPSG
@@ -22,6 +22,26 @@ from .courts import CourtInfoByIncident
 from .geo import *
 from .streets import StreetHotSpots
 from .utils import validate_data_schema
+
+
+class Geometry(Point):
+    """
+    Shapely point geometry.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, Point):
+            raise TypeError("shapely point object required")
+        return v
+
+    @classmethod
+    def __modify_schema__(cls, field_schema, field):
+        pass
 
 
 def upload_to_s3(data, filename):
@@ -105,12 +125,14 @@ def add_geographic_info(df):
     dc_key_list = ", ".join(
         df.loc[df.geometry.isnull(), "dc_key"].apply(lambda x: f"'{x}'")
     )
- 
+
     # Query with a post request
     url = "https://phl.carto.com/api/v2/sql"
     table_name = "incidents_part1_part2"
     where = f"dc_key IN ( {dc_key_list} )"
-    incidents = carto2gpd_post(url, table_name, where=where, fields=["dc_key"]).to_crs(df.crs)
+    incidents = carto2gpd_post(url, table_name, where=where, fields=["dc_key"]).to_crs(
+        df.crs
+    )
     incidents["dc_key"] = incidents["dc_key"].astype(str)
 
     # Did we get any matches
@@ -119,7 +141,6 @@ def add_geographic_info(df):
 
     # Merge
     if matches > 0:
-
         missing_sel = df.geometry.isnull()
         missing = df.loc[missing_sel]
         df2 = missing.drop(columns=["geometry"]).merge(
@@ -172,34 +193,99 @@ def load_existing_shootings_data():
 class ShootingVictimsSchema(BaseModel):
     """Schema for the shooting victims dataset."""
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    geometry: Point
-    dc_key: str
-    race: Literal["B", "H", "W", "A", "Other/Unknown"]
-    sex: Literal["M", "F"]
-    fatal: Literal[True, False]
-    date: str
+    dc_key: str = Field(
+        title="Incident number",
+        description="The unique incident number assigned by the Police Department.",
+    )
+    race: Literal["B", "H", "W", "A", "Other/Unknown"] = Field(
+        title="Race/Ethnicity",
+        description=(
+            "The race/ethnicity of the shooting victim. "
+            "Allowed values include: 'B' = Black, Non-Hispanic, 'H' = Hispanic, "
+            "'W' = White, Non-Hispanic, 'A' = Asian, and 'Other/Unknown'"
+        ),
+    )
+    sex: Literal["M", "F"] = Field(
+        title="Sex", description="The sex of the shooting victim."
+    )
+    fatal: Literal[True, False] = Field(
+        title="Fatal?", description="Whether the incident was fatal."
+    )
+    date: str = Field(
+        title="Date",
+        description="The datetime of the incident in the format 'Y/m/d H:M:S'",
+    )
     age_group: Literal[
-        "18 to 30", "Younger than 18", "31 to 45", "Older than 45", "Unknown"
-    ]
-    has_court_case: Literal[True, False]
+        "Younger than 18", "18 to 30", "31 to 45", "Older than 45", "Unknown"
+    ] = Field(tile="Age group", description="The victim's age group (or unknown).")
+
+    has_court_case: Literal[True, False] = Field(
+        title="Associated Court Case?",
+        description="Does the incident number have an associated court case?",
+    )
 
     # Not all ages are known
-    age: Optional[float] = None
+    age: Optional[float] = Field(
+        default=None,
+        title="Age",
+        description="The victim's age; missing in some cases.",
+    )
 
     # Optional geographic add-ons
-    street_name: Optional[str] = None
-    block_number: Optional[float] = None
-    segment_id: Optional[str] = None
-    zip_code: Optional[str] = None
-    council_district: Optional[str] = None
-    police_district: Optional[str] = None
-    neighborhood: Optional[str] = None
-    school_name: Optional[str] = None
-    house_district: Optional[str] = None
-    senate_district: Optional[str] = None
+    geometry: Optional[Geometry] = Field(
+        default=None,
+        description="The lat/lng point location of the shooting incident; missing in some cases.",
+    )
+    street_name: Optional[str] = Field(
+        default=None,
+        title="Street name",
+        description="The name of the street the incident occurred on, if available.",
+    )
+    block_number: Optional[float] = Field(
+        default=None,
+        title="Block number",
+        description="The block number where the incident occurred, if available.",
+    )
+    zip_code: Optional[str] = Field(
+        default=None,
+        title="ZIP Code",
+        description="The ZIP code where the incident occurred, if available.",
+    )
+    council_district: Optional[str] = Field(
+        default=None,
+        title="Council district",
+        description="The council district where the incident occurred, if available.",
+    )
+    police_district: Optional[str] = Field(
+        default=None,
+        title="Police district",
+        description="The police district where the incident occurred, if available.",
+    )
+    neighborhood: Optional[str] = Field(
+        default=None,
+        title="Neighborhood name",
+        description="The name of the neighborhood where the incident occurred, if available.",
+    )
+    school_name: Optional[str] = Field(
+        default=None,
+        title="School catchment",
+        description="The elementary school catchment where the incident occurred, if available.",
+    )
+    house_district: Optional[str] = Field(
+        default=None,
+        title="PA House district",
+        description="The PA House district where the incident occurred, if available.",
+    )
+    senate_district: Optional[str] = Field(
+        default=None,
+        title="Block number",
+        description="The PA Senate district where the incident occurred, if available.",
+    )
+    segment_id: Optional[str] = Field(
+        default=None,
+        title="Block number",
+        description="The ID of the street segment where the incident occurred, if available.",
+    )
 
     @validator("dc_key")
     def verify_dc_key(cls, v):
@@ -335,7 +421,6 @@ class ShootingVictimsData:
 
         # Save each year's data to separate file
         for year in unique_years:
-
             if self.debug:
                 logger.debug(f"Saving {year} shootings as a GeoJSON file")
 
