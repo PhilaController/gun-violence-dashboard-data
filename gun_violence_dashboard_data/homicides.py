@@ -4,13 +4,38 @@ Crime Stats website."""
 from dataclasses import dataclass
 from datetime import date
 
-import cloudscraper
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
+
 import pandas as pd
 from bs4 import BeautifulSoup
 from cached_property import cached_property
 from loguru import logger
 
 from . import DATA_DIR
+
+
+def get_webdriver(debug=False):
+    """
+    Initialize a selenium web driver with the specified options.
+
+    Parameters
+    ----------
+    debug: bool
+        Whether to use the headless version of Chrome
+    """
+    # Create the options
+    options = webdriver.ChromeOptions()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
+    if not debug:
+        options.add_argument("--headless")
+
+    return webdriver.Chrome(options=options)
 
 
 @dataclass
@@ -32,31 +57,52 @@ class PPDHomicideTotal:
     URL = "https://www.phillypolice.com/crime-maps-stats/"
 
     def __post_init__(self):
-        scraper = cloudscraper.create_scraper()
-        self.soup = BeautifulSoup(scraper.get(self.URL).content, "lxml")
+        # Get the driver
+        driver = get_webdriver(debug=self.debug)
+
+        # Navigate to the page
+        driver.get(self.URL)
+
+        # Wait for the tables to load
+        delay = 5  # seconds
+        try:
+            WebDriverWait(driver, delay).until(
+                EC.presence_of_element_located((By.ID, "stats-content"))
+            )
+
+            # Get the page source
+            self.soup = BeautifulSoup(driver.page_source, "html.parser")
+
+            # Get the two tables on the page
+            self.tables = self.soup.select("table")
+
+        except TimeoutException:
+            raise ValueError("Page took too long to load")
 
     @cached_property
     def years(self):
         """The years available on the page. Starts with 2007."""
 
-        return [
-            int(td.text)
-            for td in self.soup.select("#homicide-stats")[0]
-            .find("tr")
-            .find_all("th")[1:]
-        ]
+        # Get the years from both tables and take the unique ones
+        years = []
+        for table in self.tables:
+            years += [
+                int(th.text)
+                for th in table.select_one("thead").select("th")
+                if th.text.startswith("2")
+            ]
+
+        return list(sorted(set(years), reverse=True))
 
     @cached_property
     def as_of_date(self):
         """The current "as of" date on the page."""
 
-        date = (
-            self.soup.select("#homicide-stats")[0]
-            .select("tbody")[0]
-            .select_one("td")
-            .text.split("\n")[0]
-        )
-        return pd.to_datetime(date + " 11:59:00")
+        # This will be in the form of "Month name Day"
+        date = self.tables[0].select_one("tbody").select_one("tr").select_one("th").text
+
+        # Return a datetime object
+        return pd.to_datetime(f"{date} {self.years[0]}" + " 11:59:00")
 
     @cached_property
     def annual_totals(self):
@@ -65,7 +111,8 @@ class PPDHomicideTotal:
         # This is for historic data only (doesn't include current year)
         annual_totals = [
             int(td.text)
-            for td in self.soup.select("#homicide-stats")[1].find_all("td")[1:]
+            for td in self.tables[1].select_one("tbody").select("td")
+            if td.text
         ]
 
         if len(annual_totals) != len(self.years[1:]):
@@ -81,17 +128,29 @@ class PPDHomicideTotal:
     def ytd_totals(self):
         """The year-to-date totals for homicides in Philadelphia."""
 
-        # Scrape the table
-        table = self.soup.select("#homicide-stats")[0]
-        ytd_totals = [table.select("tbody")[0].select(".homicides-count")[0].text]
-        ytd_totals += [td.text for td in table.select("tbody")[0].find_all("td")[2:-1]]
-        ytd_totals = list(map(int, ytd_totals))
+        # Years
+        years = [
+            int(th.text)
+            for th in self.tables[0].select_one("thead").select("th")
+            if th.text.startswith("2")
+        ]
 
-        if len(ytd_totals) != len(self.years):
-            raise ValueError("Length mismatch between parsed years and homicides")
+        # Get the YTD totals
+        ytd_totals = []
+        for i, td in enumerate(self.tables[0].select_one("tbody").select("td")):
+            if i == 0:
+                value = td.select_one("div").text
+            else:
+                value = td.text
+
+            if value:
+                ytd_totals.append(int(value))
+
+        if len(ytd_totals) != len(years):
+            raise ValueError("Length mismatch between parsed years and YTD homicides")
 
         # Return ytd totals, sorted in ascending order
-        out = pd.DataFrame({"year": self.years, "ytd": ytd_totals})
+        out = pd.DataFrame({"year": years, "ytd": ytd_totals})
         return out.sort_values("year", ascending=False)
 
     @property
@@ -111,9 +170,8 @@ class PPDHomicideTotal:
     def _get_years_from_year_end_section(self):
         return [
             int(th.text)
-            for th in self.soup.select("#homicide-stats")[1]
-            .select_one("tr")
-            .select("th")[1:]
+            for th in self.tables[1].select_one("thead").select("th")
+            if th.text.startswith("2")
         ]
 
     def update(self, force=False):
@@ -137,7 +195,6 @@ class PPDHomicideTotal:
 
         # Update if we need to
         if force or latest_database_date < self.as_of_date:
-
             if self.debug:
                 logger.debug("Parsing PPD website to update YTD homicides")
 

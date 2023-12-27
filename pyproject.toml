@@ -19,7 +19,6 @@ requests = "*"
 bs4 = "*"
 cached-property = "*"
 phl-courts-scraper = {git = "https://github.com/PhilaController/phl-courts-scraper", branch = "master"}
-webdriver-manager = "*"
 esri2gpd = "*"
 xlrd = "*"
 tryagain = "^1.0"
