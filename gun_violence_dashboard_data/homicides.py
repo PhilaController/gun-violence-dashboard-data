@@ -143,6 +143,7 @@ class PPDHomicideTotal:
             else:
                 value = td.text
 
+            print(i, td)
             if value:
                 ytd_totals.append(int(value))
 

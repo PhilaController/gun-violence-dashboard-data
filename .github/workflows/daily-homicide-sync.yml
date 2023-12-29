@@ -1,4 +1,5 @@
 name: Daily Homicide Data Sync
+
 on:
   schedule:
     - cron: "15 15 * * 1-5"
