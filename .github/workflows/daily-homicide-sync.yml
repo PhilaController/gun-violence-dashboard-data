@@ -29,7 +29,7 @@ jobs:
         run: |
           poetry install
           git pull origin master
-          poetry run gv-dashboard-data daily-update --debug --homicides-only
+          poetry run gv-dashboard-data daily-update --homicides-only
       - name: Commit files
         continue-on-error: true
         run: |
