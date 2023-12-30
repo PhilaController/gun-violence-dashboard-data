@@ -193,41 +193,44 @@ class PPDHomicideTotal:
         # Latest database date
         latest_database_date = database.iloc[-1]["date"]
 
-        # Update if we need to
-        if force or latest_database_date < self.as_of_date:
-            if self.debug:
-                logger.debug("Parsing PPD website to update YTD homicides")
+        # Remove last row
+        if self.as_of_date == latest_database_date:
+            database = database.drop(index=database.index[-1])
 
-            # Merge annual totals (historic) and YTD (current year)
-            data = pd.merge(self.annual_totals, self.ytd_totals, on="year", how="outer")
+        # Update
+        if self.debug:
+            logger.debug("Parsing PPD website to update YTD homicides")
 
-            # Add new row to database
-            YTD = self.ytd_totals.iloc[0]["ytd"]
-            database.loc[len(database)] = [self.as_of_date, YTD]
+        # Merge annual totals (historic) and YTD (current year)
+        data = pd.merge(self.annual_totals, self.ytd_totals, on="year", how="outer")
 
-            # Sanity check on new total
-            new_homicide_total = database.iloc[-1]["total"]
-            old_homicide_total = database.iloc[-2]["total"]
-            new_year = database.iloc[-1]["date"].year
-            old_year = database.iloc[-2]["date"].year
-            if (
-                not force
-                and new_homicide_total < old_homicide_total
-                and (new_year == old_year)
-            ):
-                raise ValueError(
-                    f"New YTD homicide total ({new_homicide_total}) is less than previous YTD total ({old_homicide_total})"
-                )
+        # Add new row to database
+        YTD = self.ytd_totals.iloc[0]["ytd"]
+        database.loc[len(database)] = [self.as_of_date, YTD]
 
-            # Save it
-            path = DATA_DIR / "processed" / "homicide_totals.json"
-            data.set_index("year").to_json(path, orient="index")
-
-            # Save it
-            if self.debug:
-                logger.debug("Updating PPD homicides data file")
-
-            # Drop duplicates and save
-            database.drop_duplicates(subset=["date"], keep="last").to_csv(
-                self.path, index=False
+        # Sanity check on new total
+        new_homicide_total = database.iloc[-1]["total"]
+        old_homicide_total = database.iloc[-2]["total"]
+        new_year = database.iloc[-1]["date"].year
+        old_year = database.iloc[-2]["date"].year
+        if (
+            not force
+            and new_homicide_total < old_homicide_total
+            and (new_year == old_year)
+        ):
+            raise ValueError(
+                f"New YTD homicide total ({new_homicide_total}) is less than previous YTD total ({old_homicide_total})"
             )
+
+        # Save it
+        path = DATA_DIR / "processed" / "homicide_totals.json"
+        data.set_index("year").to_json(path, orient="index")
+
+        # Save it
+        if self.debug:
+            logger.debug("Updating PPD homicides data file")
+
+        # Drop duplicates and save
+        database.drop_duplicates(subset=["date"], keep="last").to_csv(
+            self.path, index=False
+        )
