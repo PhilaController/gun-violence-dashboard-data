@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "dc_key": "202408000009", "race": "H", "sex": "M", "fatal": false, "date": "2024/01/01 00:20:00", "age_group": "18 to 30", "has_court_case": false, "age": 27.0, "street_name": null, "block_number": null, "zip_code": null, "council_district": null, "police_district": null, "neighborhood": null, "school_name": null, "house_district": null, "senate_district": null, "segment_id": null }, "geometry": null }
+]
+}
