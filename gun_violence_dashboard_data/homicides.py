@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
-
+import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from cached_property import cached_property
@@ -135,14 +135,23 @@ class PPDHomicideTotal:
             if th.text.startswith("2")
         ]
 
-        # Get the YTD totals
-        ytd_totals = []
-        for i, td in enumerate(self.tables[0].select_one("tbody").select("td")):
-            if i == 0:
-                value = td.select_one("div").text
-            else:
-                value = td.text
+        # Get YTD total for current year
+        API = "https://phillypolice.com/api/stats/homicides"
+        ytd_homicides_this_year = requests.get(API).json()["total"]
 
+        # Get the YTD totals
+        ytd_totals = [ytd_homicides_this_year]
+
+        # Get the tds
+        tds = self.tables[0].select_one("tbody").select("td")
+
+        # Get the last number of years
+        nyears_minus_one = len(years) - 1
+        tds = tds[-nyears_minus_one:]
+
+        # Get the years
+        for td in tds:
+            value = td.text
             if value:
                 ytd_totals.append(int(value))
 
